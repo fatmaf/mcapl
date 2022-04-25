@@ -45,23 +45,82 @@ location_coordinate(dangerroomsideend,4.20, 0.34,0.0)
 
 
 
+
+free(door)
+free(bigtankfront)
+free(bigtankside)
+free(tank1right)
+free(tank1bottom)
+free(tank2top)
+free(tank2left)
+free(tank2bottom)
+free(tankset)
+free(stairs)
+
+free(entrance)
+free(dangerroomside)
+free(dangerroomsideend)
+
+free(tank1top)
+
+order(tank1top,dangerroom)
+order(dangerroom,pipes)
+
+:Reasoning Rules:
+
+cantvisit(L1) :- failedtovisit(L1); 
+cantvisit(L1) :- visited(L1);
+
 :Initial Goals:
 
 
 visit(tank1top) [achieve]
 visit(dangerroom) [achieve]
 visit(pipes) [achieve]
+visit(tank2left) [achieve]
 
 :Plans:
 
 
-+!visit(A) [achieve] : {~B visited(A),  ~B going(B), ~B failedtovisit(A), B location_coordinate(A,X,Y,Z)} <-
- +.lock, print(A),+going(A), move(X,Y,0.0), -.lock; 
 
-+!visit(A) [achieve] : {B visited(A)} <- do_nothing;
-+!visit(A) [achieve] : {B going(B), ~B visited(A)} <- do_nothing;
-+!visit(A) [achieve] : {B failedtovisit(A)} <- print("Previously failed to visit location"),
-					 print(A); 
++!visit(L1) [achieve]: {B location(L1), B location_coordinate(L1,X,Y,Z), 
+						B free(L1), ~B cantvisit(L1), ~B going(L2) } <- 
+						+.lock, print("executing free"),print(L1),+going(L1), move(X,Y,0.0), -.lock; 
+						
++!visit(L1) [achieve]: {B location(L1), B location_coordinate(L1,X,Y,Z), 
+						B free(L1), ~B cantvisit(L1), B going(L2) } <- 
+						do_nothing; 
+
++!visit(L1) [achieve]: {B location(L1), B location_coordinate(L1,X,Y,Z), 
+						B free(L1), B cantvisit(L1)} <- 
+						do_nothing; 
+
+
+
+
+
+
+					
+
+
++!visit(L2) [achieve]: {B location(L2), B location_coordinate(L2,X,Y,Z),
+						B location(L1), B order(L1,L2),
+						B cantvisit(L1), ~B cantvisit(L2), ~B going(L3)} <- 
+						+.lock,print("executing second order"), print(L2),+going(L2), move(X,Y,0.0), -.lock; 
+						
++!visit(L2) [achieve]: {B location(L2), B location_coordinate(L2,X,Y,Z),
+						B location(L1), B order(L1,L2), ~B cantvisit(L1), ~B cantvisit(L2)} <- 
+						do_nothing; 
+						
++!visit(L2) [achieve]: {B location(L2), B location_coordinate(L2,X,Y,Z),
+						B location(L1), B order(L1,L2), 
+						B location(L3), B going(L3)} <- 
+						do_nothing; 
++!visit(L2) [achieve]: {B location(L2), B location_coordinate(L2,X,Y,Z),
+						B location(L1), B order(L1,L2), B cantvisit(L1), B cantvisit(L2)} <- 
+						do_nothing; 
+
+
 
 +movebase_result(Id,3) : {B going(A)} <- 
 							+.lock,

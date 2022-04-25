@@ -1,7 +1,7 @@
 
 GWENDOLEN
 
-:name: hello
+:name: mrshaldi
 
 :Initial Beliefs:
 
@@ -10,16 +10,28 @@ loc(b)
 loc(c)
 loc(d)
 
+order(a,b)
+order(b,c)
+
+free(d)
+
 :Reasoning Rules:
 
-mission :- visit(a), visit(b) , visit(c);
+canvisit(L1) :- failedtovisit(L1); 
+canvisit(L1) :- visited(L1);
 
 :Initial Goals:
 
-mission [achieve]
+visit(a) [achieve]
+visit(b) [achieve]
+visit(c) [achieve]
 
 :Plans:
 
-+!mission [achieve]: {True} <- +!visit_before(a,b)[perform], +!visit_before(b,c)[perform]; 
-+!visit_before(A,B) [perform] : {~B visit(A), ~B visit(B), ~B failed(A), ~B failed(B)} <- +!visit(A);
-+!visit(A) [achieve] : {B loc(A)} <- +.lock, print("visited"), print(A), +visit(A), -.lock; 
+
++!visit(L2) [achieve] : {B loc(L1), B loc(L2), B order(L1,L2), B canvisit(L1)} <- +.lock, print("visited"), print(L2), +visited(L2),+visit(L2), -.lock; 
++!visit(L2) [achieve] : {B loc(L1), B loc(L2), B order(L1,L2), ~B canvisit(L1)} <- do_nothing;
++!visit(L1) [achieve] : {B loc(L1), B loc(L2), B order(L1,L2), ~B canvisit(L1)} <- +.lock, print("visited"), print(L1), +visited(L1),+visit(L1), -.lock;
++!visit(L1) [achieve] : {B loc(L1), B free(L1), ~B canvisit(L1)} <- +.lock, print("visited"), print(L1), +visited(L1),+visit(L1), -.lock;
++!visit(L2) [achieve] : {B loc(L1), B free(L1),B canvisit(L1)} <- do_nothing;
++!visit(L1) [achieve] : {B loc(L1), B loc(L2), B order(L1,L2), B canvisit(L1)} <- do_nothing;
