@@ -1,0 +1,115 @@
+GWENDOLEN
+
+
+:name: agent
+
+:Initial Beliefs: 
+location(l0)
+location(l1)
+location(l2)
+location(l3)
+location(l4)
+location(l5)
+
+at(l0)
+
+orders(order(l1,l3), order(l3,l5))
+
+
+
+
+plans(l1,[plan(l1,1,[move_to(l1)]),plan(l1,2,[move_to(l2), move_to(l1)]),plan(l1,3,[move_to(l2), move_to(l3), move_to(l4), move_to(l5), move_to(l1)])])
+
+
+:Reasoning Rules:
+
+
+findinplan(X,[move_to(X)|T]);
+findinplan(X,[H|T]):- findinplan(X,T);
+
+before(_, [], []);
+before(X, [ move_to(X) | _], [  ]);
+
+before(X, [ move_to(Y) | T], [ move_to(Y) |Res ]):- dif(X,Y), before(X,T,Res);
+
+after(_, [], []);
+after(X, [ move_to(X) | T ], [ T ]);
+after(X, [move_to(Y) | T], Res ):- dif(X,Y),after(X,T,Res);
+	
+xbeforey(X,Y,L):-
+	before(Y,L,LbeforeY),
+	findinplan(X,LbeforeY);
+	
+xaftery(X,Y,L):-
+	after(Y,L,LafterY),
+	findinplan(X,LafterY);
+
+validplan(Plan,X,Y):- 
+	order(X,Y), xbeforey(X,Y,Plan);	
+
+validplan(Plan,[]);
+
+validplan(Plan,[order(X,Y) | T]):-
+	validplan(Plan,X,Y),
+	validplan(Plan,T);
+	
+validplan(Plan):-
+	orders(X),
+	validplan(Plan,X);
+
+	
+
+ordersPreserved(Plan,[],[],0); 
+
+ordersPreserved(Plan,[order(X,Y) | T],[order(X,Y) | Res],Num):-
+	validplan(Plan,X,Y),
+	ordersPreserved(Plan,T,Res,Num1),
+	Num is Num1 +1;
+	
+ordersPreserved(Plan, [order(X,Y) | T],Res,Num) :- 
+	ordersPreserved(Plan,T,Res,Num);
+	
+
+
+leastViolatingPlan(O,[plan(X,Y,P) | T], NumOrders, PlanIndex):-
+	ordersPreserved(P,O,OrderList,NumOrders1),
+	leastViolatingPlan(O,T,NumOrders1,0,0,NumOrders,PlanIndex);
+
+	
+leastViolatingPlan(O,[],OldMaxOrders,OldIndex,_,OldMaxOrders,OldIndex);
+
+leastViolatingPlan(O,[plan(X,Y,P) | T], OldMaxOrders,_,CurrentIndex,Max,Index):-
+	ordersPreserved(P,O,OrderList,NumOrders1),
+	NumOrders1 > OldMaxOrders,
+	NewCurrentIndex is Y,
+	NewIndex is NewCurrentIndex,
+	leastViolatingPlan(O,T,NumOrders1,NewIndex,NewCurrentIndex,Max,Index);
+	
+leastViolatingPlan(O,[plan(X,Y,P) | T], OldMaxOrders, OldIndex, CurrentIndex, Max,Index):-
+	ordersPreserved(P,O,OrderList,NumOrders1),
+	NumOrders1 =< OldMaxOrders,
+	NewCurrentIndex is Y,
+	leastViolatingPlan(O,T,OldMaxOrders,OldIndex,NewCurrentIndex,Max,Index);
+	
+	
+leastViolatingPlan(X,NumOrders,Index):-
+	plans(X,L),
+	orders(O),
+	leastViolatingPlan(O,L,NumOrders,Index);
+
+
+
+:Initial Goals:
+
+visit(l1) [achieve]
+
+
+:Plans:
+
++!visit(l1) [achieve] : {B leastViolatingPlan(l1,_,Ind)} <- +!visit(l1,Ind)[perform];
++!visit(l1,1) [perform] : {B at(l0)} <- move_to(l1), +visit(l1);            
++!visit(l1,2) [perform] : {B at(l0)} <- move_to(l2), move_to(l1), +visit(l1); 
++!visit(l1,3) [perform] : {B at(l0)} <- move_to(l2), move_to(l3), move_to(l4), move_to(l5), move_to(l1), +visit(l1); 
+
+
+	

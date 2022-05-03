@@ -21,10 +21,10 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_seq.gwen
+mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_plans.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
-env = ail.mas.DefaultEnvironment
+env = gwendolen.tutorials.tutorial1.MoveEnv
 
 log.info = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent

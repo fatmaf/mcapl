@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// Copyright (C) 2014 Louise A. Dennis, and Michael Fisher.
+// Copyright (C) 2014 Louise A. Dennis and Michael Fisher
 // 
 // This file is part of Gwendolen
 //
@@ -21,11 +21,28 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_seq.gwen
-mas.builder = gwendolen.GwendolenMASBuilder
+GWENDOLEN
 
-env = ail.mas.DefaultEnvironment
+:name: hello_world
 
-log.info = ail.mas.DefaultEnvironment
-//log.fine = ail.semantics.AILAgent
-//log.finer = ail.syntax.EvaluationAndRuleBaseIterator
+:Initial Beliefs:
+
+:Reasoning Rules:
+
+sayall :- print(achieved),say_something, say_anything;
+
+:Initial Goals:
+
+say_something [achieve]
+say_anything [achieve]
+sayall [achieve]
+
+:Plans:
+
++!sayall [achieve] : {True} <- do_nothing;
++!say_something [achieve] : {True} <- +saying_hello, +.lock, print(hello), -.lock ,+say_something;
++!say_anything [achieve] : {True} <- +saying_goodbye, +.lock, print(goodbye), -.lock ,+say_anything;
++!say [achieve] : {True} <- +.lock, print(done), -.lock, +say;
+
++say_something : {True} <- print(saidsomething);
++say_anything : {True} <- print(saidanything);
