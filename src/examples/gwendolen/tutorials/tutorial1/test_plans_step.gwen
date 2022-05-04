@@ -57,7 +57,13 @@ iterative_spec_match(S,PlanId,Plan_annots,Index,UpdatedSpec):-
 	remove_last_from_list(S,UpdatedSpec1),
 	iterative_spec_match(UpdatedSpec1,PlandId,Plan_annots,Index,UpdatedSpec);
 
+plan(Id,Ind,Plan) :- plans(fullplan,L), ismember(plan(fullplan,Id,Plan),L);
 
+iterative_match(X,Index,UpdatedSpec):-
+	plan_annotations(X,L),
+	specification(S),
+	iterative_spec_match(S,X,L,Index,UpdatedSpec);
+	
 :Initial Goals:
 
 satisfy_spec [achieve]
@@ -66,18 +72,11 @@ satisfy_spec [achieve]
 :Plans:
 
 +!satisfy_spec [achieve] : 
-	{ B iterative_spec_match([at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4),before(l2,l4)],
-	fullplan,
-	[
-	
-	plan_annotation(fullplan,2,[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]),
-	plan_annotation(fullplan,1,[at(l1),at(l2),at(l4),before(l1,l2),before(l2,l4),before(l1,l4)])
-	],
-	Index,
-	US) } <- 
+	{ B iterative_match(fullplan,Index,US)} <- 
 				print("plan matches spec"),
 				print(Index),
 				print(US),
+				+!achieve_plan(Index,0)[achieve],
 				+satisfy_spec;
 			
 				
