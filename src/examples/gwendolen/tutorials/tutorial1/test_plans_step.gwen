@@ -42,7 +42,21 @@ plan_matches_spec([H_spec | T_spec], Plan_annotation):-
 	ismember(H_spec, Plan_annotation),
 	plan_matches_spec(T_spec,Plan_annotation);
 	
+
+planlist_spec_match(Spec,[plan_annotation(PlanId,Index,Plan) | T],Index):-
+	plan_matches_spec(Spec,Plan);
 	
+planlist_spec_match(Spec,[plan_annotation(PlanId,Index,Plan) | T], PIndex):-
+	planlist_spec_match(Spec,T,PIndex);	
+
+
+iterative_spec_match(S,PlanId,Plan_annots,Index,S):-
+	planlist_spec_match(S,Plan_annots,Index);
+	
+iterative_spec_match(S,PlanId,Plan_annots,Index,UpdatedSpec):-
+	remove_last_from_list(S,UpdatedSpec1),
+	iterative_spec_match(UpdatedSpec1,PlandId,Plan_annots,Index,UpdatedSpec);
+
 
 :Initial Goals:
 
@@ -52,13 +66,20 @@ satisfy_spec [achieve]
 :Plans:
 
 +!satisfy_spec [achieve] : 
-	{ B plan_matches_spec([at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4),before(l2,l4)],[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]) } <- 
+	{ B iterative_spec_match([at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4),before(l2,l4)],
+	fullplan,
+	[
+	
+	plan_annotation(fullplan,2,[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]),
+	plan_annotation(fullplan,1,[at(l1),at(l2),at(l4),before(l1,l2),before(l2,l4),before(l1,l4)])
+	],
+	Index,
+	US) } <- 
 				print("plan matches spec"),
+				print(Index),
+				print(US),
 				+satisfy_spec;
-+!satisfy_spec [achieve] : 
-	{ ~B plan_matches_spec([at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4),before(l2,l4)],[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]) } <- 
-				print("plan does not match spec"),
-				+satisfy_spec;				
+			
 				
 +!achieve_plan(Id,Ind) [achieve] : {B plan(Id,Ind,[])} <- +achieve_plan(Id,Ind), +satisfy_spec;
 
