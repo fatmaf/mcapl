@@ -21,7 +21,7 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_plans.gwen
+mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_plans_step.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
 env = gwendolen.tutorials.tutorial1.MoveEnv
