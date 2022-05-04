@@ -37,6 +37,13 @@ remove_last_from_list([H|T],[H | NewL]) :-
 	remove_last_from_list(T,NewL);
 
 
+plan_matches_spec([],Plan_annotation);
+plan_matches_spec([H_spec | T_spec], Plan_annotation):-
+	ismember(H_spec, Plan_annotation),
+	plan_matches_spec(T_spec,Plan_annotation);
+	
+	
+
 :Initial Goals:
 
 satisfy_spec [achieve]
@@ -44,10 +51,14 @@ satisfy_spec [achieve]
 
 :Plans:
 
-+!satisfy_spec [achieve] : { B remove_last_from_list([1,2,3,4],AList) } <- 
-				print(AList),
++!satisfy_spec [achieve] : 
+	{ B plan_matches_spec([at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4),before(l2,l4)],[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]) } <- 
+				print("plan matches spec"),
 				+satisfy_spec;
-				
++!satisfy_spec [achieve] : 
+	{ ~B plan_matches_spec([at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4),before(l2,l4)],[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]) } <- 
+				print("plan does not match spec"),
+				+satisfy_spec;				
 				
 +!achieve_plan(Id,Ind) [achieve] : {B plan(Id,Ind,[])} <- +achieve_plan(Id,Ind), +satisfy_spec;
 
