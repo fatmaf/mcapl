@@ -21,11 +21,11 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_plans_step.gwen
+mas.file = /src/examples/gwendolen/tutorials/tutorial1/test_plans_step-noconflict.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
 env = gwendolen.tutorials.tutorial1.MoveEnv
 
 log.info = ail.mas.DefaultEnvironment
-log.fine = ail.semantics.AILAgent
+//log.fine = ail.semantics.AILAgent
 log.finer = ail.syntax.EvaluationAndRuleBaseIterator
