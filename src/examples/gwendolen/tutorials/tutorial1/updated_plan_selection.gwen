@@ -15,7 +15,7 @@ location(l5)
 plan_annotations(fullplan,[
 	
 	plan_annotation(fullplan,2,[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)]),
-	plan_annotation(fullplan,1,[at(l1),at(l2),at(l4),before(l2,l4),before(l1,l4)])
+	plan_annotation(fullplan,1,[at(l1),at(l2),at(l4),before(l1,l2),before(l1,l4)])
 	])
 	
 plans(fullplan, [
@@ -40,7 +40,7 @@ get_plans_for_spec(S, [plan_annotation(X,Ind,HP) | TP], [plan_annotation(X,Ind,H
 get_plans_for_spec(S,[plan_annotation(X,Ind,HP) | TP], Res) :-
 	get_plans_for_spec(S,TP,Res);
 	
-check_plans_for_spec(L,[],L):- print("Empty plans returning original");
+check_plans_for_spec(L,[],L);
 check_plans_for_spec(L,NL,NL);
 
 get_plans_for_spec(S,PlanSet) :-
