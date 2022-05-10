@@ -43,8 +43,7 @@ get_plans_for_spec(S,[plan_annotation(X,Ind,HP) | TP], Res) :-
 check_plans_for_spec(L,[],L);
 check_plans_for_spec(L,NL,NL);
 
-get_plans_for_spec(S,PlanSet) :-
-	plan_annotations(X,L),
+get_plans_for_spec(S,L,PlanSet) :-
 	get_plans_for_spec(S,L,Res),
 	check_plans_for_spec(L,Res,PlanSet);
 
@@ -60,12 +59,12 @@ get_plans_for_speclist([H|T],Plans,PossiblePlans):-
 	
 get_plans_for_speclist(PlanSet):-
 	specification(S),
-	plan_annotations(X,L),
+	plan_annotations(_,L),
 	get_plans_for_speclist(S,L,PlanSet);
 	
 
 get_first_plan_index_for_speclist(Index):-
-	get_plans_for_speclist([plan_annotation(X,Index,Plan) | TP]);
+	get_plans_for_speclist([plan_annotation(_,Index,_) | _]);
 	
 
 plan(Id,Ind,Plan) :- plans(fullplan,L), ismember(plan(fullplan,Id,Plan),L);
@@ -79,10 +78,12 @@ satisfy_spec [achieve]
 :Plans:
 
 +!satisfy_spec [achieve] : 
-	{ B get_first_plan_index_for_speclist(Index)} <- 
-				print("choosing plan at "),
-				print(Index),
-				+!achieve_plan(Index,0)[achieve],
+	{ B specification(S), 
+	  B plan_annotations(X,L), 
+	  B get_plans_for_spec(at(l1),L,PlanSet) 
+	  } <- 
+				print("The planset is "),
+				print(PlanSet),
 				+satisfy_spec;
 			
 				
