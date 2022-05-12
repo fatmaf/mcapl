@@ -25,7 +25,8 @@ public class MoveEnv extends DefaultEnvironment {
 			curloc = newlocs;
 			
 		}
-		return super.executeAction(agName, act);
+		Unifier u =super.executeAction(agName, act);
+		return u;//super.executeAction(agName, act);
 	}
 	
 
