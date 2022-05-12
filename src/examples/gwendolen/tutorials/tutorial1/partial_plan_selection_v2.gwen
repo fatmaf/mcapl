@@ -1,0 +1,137 @@
+GWENDOLEN
+
+
+:name: agent
+
+:Initial Beliefs: 
+location(l0)
+location(l1)
+location(l2)
+location(l3)
+location(l4)
+location(l5)
+
+
+
+plan_annotations(at(l1),[
+                plan_annotation(at(l1),1, [at(l1),before(l1,l3),before(l1,l5),before(l3,l5)]),
+                plan_annotation(at(l1),2, [at(l1), before(l1,l3), before(l1,l5), before(l3,l5)]),
+                plan_annotation(at(l1),3, [at(l1), before(l3,l5)])
+                ])
+                
+plans(at(l1),[ 
+        plan(at(l1),1, [move_to(l1)]),
+        plan(at(l1),2, [move_to(l2), move_to(l1)]),
+        plan(at(l1),3, [move_to(l2), move_to(l3), move_to(l4), move_to(l5), move_to(l1)])
+    ])
+    
+    
+plan_annotations(at(l3),[
+                plan_annotation(at(l3),1, [at(l3), at(l5), before(l1,l3), before(l1,l5)]),
+                plan_annotation(at(l3),2, [at(l3), before(l1,l3), before(l1,l5), before(l3,l5)])
+                ])
+                
+plans(at(l3),[ 
+        plan(at(l3),1, [move_to(l5), move_to(l4), move_to(l3)]),
+        plan(at(l3),2, [move_to(l2), move_to(l3)])
+    ])
+    
+plan_annotations(at(l5), [
+                plan_annotation(at(l5),1, [at(l5), before(l1,l3),before(l3,l5) ,before(l1,l5) ]),
+                plan_annotation(at(l5),2, [at(l5), before(l1,l3),before(l1,l5),before(l3,l5)])
+    ])
+    
+plans(at(l5),[ 
+        plan(at(l5),1, [move_to(l4), move_to(l5)]),
+        plan(at(l5),2, [move_to(l2), move_to(l1), move_to(l5)])
+    ])
+    
+initial_specification([at(l1),at(l3),at(l5), before(l1,l3), before(l1,l5), before(l3,l5)])
+
+
+:Reasoning Rules:
+
+ismember(H, [H | T]);
+ismember(H, [X | T]) :-
+	ismember(H,T);
+	
+get_plans_for_spec(S,[],[]);
+
+get_plans_for_spec(S, [plan_annotation(X,Ind,HP) | TP], [plan_annotation(X,Ind,HP) | Res]) :-
+	ismember(S,HP),
+	get_plans_for_spec(S,TP,Res);  
+	
+get_plans_for_spec(S,[plan_annotation(X,Ind,HP) | TP], Res) :-
+	get_plans_for_spec(S,TP,Res);
+	
+check_plans_for_spec(L,[],L);
+check_plans_for_spec(L,NL,NL);
+
+get_plans_for_spec(S,L,PlanSet) :-
+	get_plans_for_spec(S,L,Res),
+	check_plans_for_spec(L,Res,PlanSet);
+
+
+get_plans_for_speclist([],Plans,Plans);	
+ 
+get_plans_for_speclist([H|T],Plans,PossiblePlans):-
+	get_plans_for_spec(H,Plans,PlanSet),
+	check_plans_for_spec(Plans,PlanSet,NewPlanSet),
+	get_plans_for_speclist(T,NewPlanSet,PossiblePlans);
+
+
+get_plan_list_for_speclist([H|T],Plans,H):-
+	plan_annotations(H,Plans);
+	
+get_plan_list_for_speclist([],[],[]);
+
+get_plan_list_for_speclist([H | T], Plans, Res):-
+	get_plan_list_for_speclist(T,Plans,Res);	
+
+plan(PlanType,Id,Ind,Plan) :- plans(PlanType,L), ismember(plan(PlanType,Id,Plan),L);
+
+get_firstplan_index_from_planset([plan_annotation(X,Ind,Plan)| T], X,Ind,Plan);
+
+
+
+
+can_remove_at(X):- visited(X);
+
+can_remove_before(X1,X2):-  visited(X1) , ~ visited(X2) ;
+
+get_updated_spec([],[]);
+
+get_updated_spec([at(X)], []):-
+	can_remove_at(X);
+	
+get_updated_spec([before(X1,X2)], []):-
+	can_remove_before(X1,X2);
+	
+get_updated_spec([at(X)|T],Res):-
+	can_remove_at(X),
+	get_updated_spec(T,Res);
+	
+get_updated_spec([before(X1,X2) | T], Res):-
+	can_remove_before(X1,X2),
+	get_updated_spec(T,Res);
+
+get_updated_spec([H |T], [H | Res]):-
+	get_updated_spec(T,Res);
+	
+all_satisfied([]);
+
+plan_executed(PlanType,PlanId,IndInPlan,[]);
+
+specification(ISpec,[H|T],H):-
+	get_updated_spec(ISpec,[H|T]);
+
+:Initial Goals:
+
+process_spec_list [perform]
+
+
+:Plans:
+
++!process_spec_list[perform] : {B initial_specification(S), ~B specListIndex()
+
+
