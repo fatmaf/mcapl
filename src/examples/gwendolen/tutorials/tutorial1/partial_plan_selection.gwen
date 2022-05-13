@@ -261,7 +261,7 @@ satisfy_spec [achieve]
 
 
 
-+at(X) : {True} <- +visited(X),print("atat"), print(X);
++at(X) : {True} <- +visited(X),print("reached"), print(X);
 
 +plan(PlanType,PlanId,IndInPlan,X): {True} <- print("Adding plan to belief "), print(PlanType),
 								print(PlanId), print(IndInPlan), print(X), print("done a"); 
