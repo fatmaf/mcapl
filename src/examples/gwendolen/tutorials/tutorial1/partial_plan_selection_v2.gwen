@@ -143,6 +143,11 @@ satisfy_spec[achieve]
 +!process_spec_list[perform] : 
 	{B initial_specification([H|T]), ~B can_remove(H), ~B satisfied(H)} <- 
 		 print("Not Satisfied"), print(H),+remaining_spec(T), +!process_spec_list(T)[perform]; 
+
++!process_spec_list([]) [perform] : 
+	{B remaining_spec([])} <-
+	 print("Processed all specs"), -remaining_spec([]), +!get_plan[perform];
+
 		 
 +!process_spec_list[perform] : 
 	{B initial_specification([H|T]), B can_remove(H), B satisfied(H)} <- 
@@ -169,10 +174,14 @@ satisfy_spec[achieve]
 	  print("Already Satisfied"), print(H), +remaining_spec(T), -remaining_spec([H|T]), +!process_spec_list(T)[perform];
 	  
 
-+!process_spec_list([]) [perform] : 
-	{B remaining_spec([])} <-
-	 print("Processed all specs"), -remaining_spec([]), +!get_plan[perform];
++!get_plan [perform]: {
+	B initial_specification(S), 
+	B get_updated_specification(S,[])
 
+	} <-
+	print("Updated spec list is empty so mission accomplished"),
+	+satisfy_spec
+	;
 
 +!get_plan [perform]: {
 	B initial_specification(S), 
@@ -187,6 +196,7 @@ satisfy_spec[achieve]
 	 ,print("Index"),print(Index), print("Plan"), print(Plan),
 	 +!achieve_plan(FirstSpec,Index,0) [achieve]
 	;
+
 
 +!achieve_plan(PlanType,PlanId,IndInPlan) [achieve] : {
 													B plan_executed(PlanType,PlanId,IndInPlan,[]),
