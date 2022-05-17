@@ -46,47 +46,67 @@ plans(at(l5),[
         plan(at(l5),2, [move_to(l2), move_to(l1), move_to(l5)])
     ])
     
-initial_specification([at(l1),at(l3),at(l5), before(l1,l3), before(l1,l5), before(l3,l5)])
-
+required_specification([at(l1),at(l3),at(l5) ])
+preferred_specification([before(l1,l3), before(l1,l5), before(l3,l5)])
 
 :Reasoning Rules:
 
 ismember(H, [H | T]);
 ismember(H, [X | T]) :-
 	ismember(H,T);
-	
-get_plans_for_spec(S,[],[]);
 
-get_plans_for_spec(S, [plan_annotation(X,Ind,HP) | TP], [plan_annotation(X,Ind,HP) | Res]) :-
+
+
+update_planset_if_empty(L,[],L);
+update_planset_if_empty(L,NL,NL);
+
+
+append([],X,X);
+append([H|T],X, [H | W]):-
+	append(T,X,W);
+
+get_valid_plans_for_single_spec(S,[],[]);
+
+get_valid_plans_for_single_spec(S, [plan_annotation(X,Ind,HP) | TP], [plan_annotation(X,Ind,HP) | Res]) :-
 	ismember(S,HP),
-	get_plans_for_spec(S,TP,Res);  
+	get_valid_plans_for_single_spec(S,TP,Res);  
 	
-get_plans_for_spec(S,[plan_annotation(X,Ind,HP) | TP], Res) :-
-	get_plans_for_spec(S,TP,Res);
+get_valid_plans_for_single_spec(S,[plan_annotation(X,Ind,HP) | TP], Res) :-
+	get_valid_plans_for_single_spec(S,TP,Res);
 	
-check_plans_for_spec(L,[],L);
-check_plans_for_spec(L,NL,NL);
+get_valid_plans_for_speclist_no_weakening([], Plans,Plans);
 
-get_plans_for_spec(S,L,PlanSet) :-
-	get_plans_for_spec(S,L,Res),
-	check_plans_for_spec(L,Res,PlanSet);
+get_valid_plans_for_speclist_no_weakening([HSpec | TSpec], [],[]);
 
-
-get_plans_for_speclist([],Plans,Plans);	
- 
-get_plans_for_speclist([H|T],Plans,PossiblePlans):-
-	get_plans_for_spec(H,Plans,PlanSet),
-	check_plans_for_spec(Plans,PlanSet,NewPlanSet),
-	get_plans_for_speclist(T,NewPlanSet,PossiblePlans);
+get_valid_plans_for_speclist_no_weakening([HSpec | TSpecs], Plans, ValidPlans):-
+	get_valid_plans_for_single_spec(Hspec,Plans,SingleSpecValidPlans),
+	get_valid_plans_for_single_spec(TSpec,SingleSpecValidPlans,ValidPlans);
 
 
-get_plan_list_for_speclist([],[],[]);
 
-get_plan_list_for_speclist([Spec|T],Plans,Spec):-
+
+get_valid_plans_for_speclist_weakening([HSpec | TSpecs],[],[]); 
+
+get_valid_plans_for_speclist_weakening([],Plans,Plans); 
+
+get_valid_plans_for_speclist_weakening([HSpec | TSpec], Plans, ValidPlans):-
+	get_valid_plans_for_single_spec(HSpec, Plans, SingleSpecValidPlans),
+	update_planset_if_empty(Plans,SingleSpecValidPlans,UpdatedValidPlans),
+	get_valid_plans_for_speclist_weakening(TSpec,UpdatedValidPlans,ValidPlans);
+	
+get_valid_plans_for_speclist(ReqSpecs,PrefSpecs,Plans,ValidPlans):-
+	get_valid_plans_for_speclist_no_weakening(ReqSpecs,Plans,ReqValidPlans),
+	get_valid_plans_for_speclist_weakening(PrefSpecs,ReqValidPlans,ValidPlans);
+	
+
+
+get_all_plans_for_first_plan_spec_in_speclist([],[],[]);
+
+get_all_plans_for_first_plan_spec_in_speclist([Spec|T],Plans,Spec):-
 	plan_annotations(Spec,Plans);
 	
-get_plan_list_for_speclist([Spec | TSpec], Plans, ResSpec):-
-	get_plan_list_for_speclist(TSpec,Plans,ResSpec);	
+get_all_plans_for_first_plan_spec_in_speclist([Spec | TSpec], Plans, ResSpec):-
+	get_all_plans_for_first_plan_spec_in_speclist(TSpec,Plans,ResSpec);	
 
 plan(PlanType,Id,Ind,Plan) :- plans(PlanType,L), ismember(plan(PlanType,Id,Plan),L);
 
