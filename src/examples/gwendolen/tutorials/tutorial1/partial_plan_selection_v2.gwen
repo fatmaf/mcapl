@@ -177,6 +177,27 @@ satisfy_spec[achieve]
 +!get_plan [perform]: {
 	B initial_specification(S), 
 	B get_updated_specification(S,US), 
+	~B is_empty(US)
+
+	} <-
+	print("Updated spec list"), print(US),
+	print("Getting a plan"),
+	+!get_plan2[perform]
+	;
+
++!get_plan [perform]: {
+	B initial_specification(S), 
+	B get_updated_specification(S,US), 
+	B is_empty(US)
+
+	} <-
+	print("all done")
+	;
+
++!get_plan2 [perform]: {
+	B initial_specification(S), 
+	B get_updated_specification(S,US), 
+	~B is_empty(US),
 	B get_plan_list_for_speclist(US,Plans,FirstSpec), 
 	B get_plans_for_speclist(US,Plans,ValidPlans),
 	B get_firstplan_index_from_planset(ValidPlans,FirstSpec,Index,Plan)
@@ -187,7 +208,6 @@ satisfy_spec[achieve]
 	 ,print("Index"),print(Index), print("Plan"), print(Plan),
 	 +!achieve_plan(FirstSpec,Index,0) [achieve]
 	;
-
 +!achieve_plan(PlanType,PlanId,IndInPlan) [achieve] : {
 													B plan_executed(PlanType,PlanId,IndInPlan,[]),
 														B plan(PlanType,PlanId,IndInPlan,[])
