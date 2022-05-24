@@ -24,8 +24,8 @@
 mas.file = /src/examples/gwendolen/tutorials/tutorial1/partialplan_abandon_plan.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
-env = gwendolen.tutorials.tutorial1.MoveEnv
+env = gwendolen.tutorials.tutorial1.MoveEnvWithNear
 
 log.info = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent
-log.finer = ail.syntax.EvaluationAndRuleBaseIterator
+//log.finer = ail.syntax.EvaluationAndRuleBaseIterator
