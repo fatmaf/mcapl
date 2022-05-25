@@ -134,6 +134,11 @@ satisfied(before(X,Y)):-
 	Tx < Ty;	
 
 
+all_avoid([]);
+all_avoid([avoid(X) | T]):-
+	all_avoid(T); 
+	
+
 get_updated_specification([],[]); 
 
 get_updated_specification([OldSH|OldST], NewS):-
@@ -142,6 +147,14 @@ get_updated_specification([OldSH|OldST], NewS):-
 	
 get_updated_specification([OldSH | OldST], [OldSH | NewS]):-
 	get_updated_specification(OldST,NewS);
+
+get_updated_specification_avoid(OldS, []):-
+	get_updated_specification(OldS,NewS),
+	all_avoid(NewS);
+	
+get_updated_specification_avoid(OldS, NewS):-
+	get_updated_specification(OldS,NewS);
+	
 	
 plan_executed(PlanType,PlanId,IndInPlan,[]);
 
@@ -288,19 +301,19 @@ satisfy_spec[achieve]
 
 
 +!satisfy_spec[achieve] : {
-		B initial_specification(S), B get_updated_specification(S,[FS|T]), B is_empty([FS|T])} <-
+		B initial_specification(S), B get_updated_specification_avoid(S,[FS|T]), B is_empty([FS|T])} <-
 		 print("All done"), +satisfy_spec;
 		
 +!satisfy_spec[achieve] : {
 		 B required_specification(RS), 
-		B get_updated_specification(RS,[FS|T]), ~B is_empty([FS|T])} <- print("Original spec"), print(RS),
+		B get_updated_specification_avoid(RS,[FS|T]), ~B is_empty([FS|T])} <- print("Original spec"), print(RS),
 		 print("Updated Spec"), print(FS),print("Tail"), print(T),print("Processing spec list"), +!get_plan[perform];
 
 
 
 +!get_plan [perform]: {
 	B initial_specification(S), 
-	B get_updated_specification(S,[])
+	B get_updated_specification_avoid(S,[])
 
 	} <-
 	print("Updated spec list is empty so mission accomplished"),
@@ -309,7 +322,7 @@ satisfy_spec[achieve]
 
 +!get_plan [perform]: {
 	B initial_specification(S), 
-	B get_updated_specification(S,US),
+	B get_updated_specification_avoid(S,US),
 	B get_first_applicable_plan(FirstSpec,Index,Plan)
 
 	} <-
@@ -319,8 +332,6 @@ satisfy_spec[achieve]
 	 +!achieve_plan(FirstSpec,Index,0) [achieve]
 	;
 
-+!get_plan [perform]: {B initial_specification(S), B get_updated_specification(S,US) }
-	<- print(S), print(US), print("No plan"); 
 	
 +!achieve_plan(PlanType,PlanId,IndInPlan) [achieve] : {
 													B plan_executed(PlanType,PlanId,IndInPlan,[]),
