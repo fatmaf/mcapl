@@ -47,8 +47,8 @@ plans(at(l5),[
         plan(at(l5),2, [move_to(l2), move_to(l1), move_to(l5)])
     ])
     
-required_specification([at(l1),at(l3),at(l5)])
-preferred_specification([before(l1,l3), before(l1,l5), before(l3,l5),avoid(l6)])
+required_specification([at(l5)])
+preferred_specification([avoid(l6)])
 
 :Reasoning Rules:
 
@@ -121,7 +121,7 @@ can_remove(before(X1,X2)):-
 
 
 satisfied(at(X)):-
-	visited(X,Y);
+	visited(X,Tx);
 	
 	
 satisfied(before(X,Y)):-
@@ -243,7 +243,7 @@ update_plan_annotations(PlanType,ViolatedSpec,PlanId,UpdatedAnnotationsList):-
 	update_plan_annotations(PlanType,ViolatedSpec,PlanId,L,UpdatedAnnotationsList);
 	
 	
-get_first_applicable_plan_from_updated_plans(FirstSpec,ViolatedSpec,PlanId,PlanIndex,PlanAnnots):-
+get_first_applicable_plan_from_updated_plans(FirstSpec,X,PlanId,PlanIndex,PlanAnnots):-
 	required_specification(RSpec),
 	preferred_specification(PSpec),
 	initial_specification(WholeSpec),
@@ -253,7 +253,8 @@ get_first_applicable_plan_from_updated_plans(FirstSpec,ViolatedSpec,PlanId,PlanI
 	get_updated_specification(WholeSpec,UWholeSpec),
 
 	plan_annotations(FirstSpec,AllPlansNoUpdate),
-	update_plan_annotations(FirstSpec,ViolatedSpec,PlanId,AllPlansNoUpdate,AllPlans),
+	could_violate_specs(X,UWholeSpec,[HViolatedSpec| TViolatedSpecs]),
+	update_plan_annotations(FirstSpec,HViolatedSpec,PlanId,AllPlansNoUpdate,AllPlans),
 	
 	remove_specs(FirstSpec,URSpec,URSpecExGoals,URSpecGoals),
 	get_plans_for_speclist_no_weakening(URSpecExGoals,AllPlans,StrongValidPlans),
@@ -285,9 +286,12 @@ could_violate_specs(X,[HSpec | T],VS):-
 
 could_violate_specs(X,ViolatedSpecs):-
 	initial_specification(WholeSpec),
-	get_updated_specification(WholeSpec,UWholeSpec),
-
+	get_updated_specification_avoid(WholeSpec,UWholeSpec),
 	could_violate_specs(X,UWholeSpec,ViolatedSpecs);
+	
+specs_violated(X):-
+	could_violate_specs(X,VS),
+	~ is_empty(X,VS);
 
 :Initial Goals:
 
@@ -306,8 +310,14 @@ satisfy_spec[achieve]
 		
 +!satisfy_spec[achieve] : {
 		 B required_specification(RS), 
-		B get_updated_specification_avoid(RS,[FS|T]), ~B is_empty([FS|T])} <- print("Original spec"), print(RS),
-		 print("Updated Spec"), print(FS),print("Tail"), print(T),print("Processing spec list"), +!get_plan[perform];
+		B get_updated_specification_avoid(RS,[FS|T]), ~B is_empty([FS|T])} <- 
+			append("Original spec ",RS,Print1), 
+			print(Print1),
+		 append("Updated Spec ",FS,Print2),
+		  print(Print2),
+		  append("Tail ",T,Print3), 
+		  print(Print3),
+		  print("Processing spec list"), +!get_plan[perform];
 
 
 
@@ -326,9 +336,10 @@ satisfy_spec[achieve]
 	B get_first_applicable_plan(FirstSpec,Index,Plan)
 
 	} <-
-	print(RS),
-	print(Plans), print(ValidPlans),
-	 print("Index"),print(Index), print("Plan"), print(Plan),
+	 append("Got Plan Index ",Index,Print1),
+	 append(Print1," Plan ",Print2), 
+	 append(Print2,Plan,Print3), 
+	 print(Print3),
 	 +!achieve_plan(FirstSpec,Index,0) [achieve]
 	;
 
@@ -339,7 +350,7 @@ satisfy_spec[achieve]
 														} <-
 													-plan(PlanType,PlanId,IndInPlan,[]),
 													 +achieve_plan(PlanType,PlanId,IndInPlan),
-													 print("Achieved full plan for"), print(PlanType);
+													 append("Achieved full plan for ",PlanType,Print1), print(Print1);
 													 
 													 
 	
@@ -348,16 +359,19 @@ satisfy_spec[achieve]
 														B plan(PlanType,PlanId,IndInPlan,[move_to(X) | T])
 												} <- 
 													
-													print(" Moving "),
+													append("Moving to ",X,Print1),
+													print(Print1),
 													move_to(X), 
 													+achieve_plan(PlanType,PlanId,IndInPlan),
 													sum(IndInPlan,1,Z), 
-													print("Updated Index"),
+													append("Updated Index from ",IndInPlan,Print2),
+													append(Print2," to ",Print3),
+													append(Print3, Z, Print4),
+													print(Print4),
 													
 													-plan(PlanType,PlanId,IndInPlan,[move_to(X) | T]),
-													print(IndInPlan),
-													print(Z),
-													print(T),
+													append("Remaining plan ",T,Print5),
+													print(Print5),
 													print("Removed plan belief "),
 													+plan(PlanType,PlanId,Z,T), 
 													print("Added new plan belief"),
@@ -368,7 +382,7 @@ satisfy_spec[achieve]
 +!achieve_plan(PlanType,PlanId,IndInPlan) [achieve] : {
 													~B plan_executed(PlanType,PlanId,IndInPlan,[move_to(X) | T]),
 													B plan(PlanType,PlanId,IndInPlan,[print(X) | T])} <- 
-													
+													print("Printing"),
 													print(X), 
 													+achieve_plan(PlanType,PlanId,IndInPlan),
 													sum(IndInPlan,1,Z), 
@@ -379,16 +393,35 @@ satisfy_spec[achieve]
 													+!achieve_plan(PlanType,PlanId,Z)[achieve];
 													
 														
-+at(X) : {B number_of_locations_visited(Y)} <- sum(Y,1,Z),+visited(X,Z), -number_of_locations_visited(Y), +number_of_locations_visited(Z),print("reached"), print(X);
-		
-+near(X): {B could_violate_specs(X,[])} <- print("Near "),print(X);	
-+near(X): {B could_violate_specs(X,VS)} <- print("Near "),print(X),print("violated specs "), print(VS);
++at(X) : {B number_of_locations_visited(Y)} <- sum(Y,1,Z),+visited(X,Z),
+ -number_of_locations_visited(Y), +number_of_locations_visited(Z),append("reached ",X,Print1), print(Print1);
 
-+!update_plan(PlanType,PlanId,ViolatedSpec)[perform]: { B plan_annotations(PlanType,L), 
-					B update_plan_annotations(PlanType,ViolatedSpec,PlanId,UpdatedAnnotationsList),
-					B get_first_applicable_plan_from_updated_plans(PlanType,ViolatedSpec,PlanId,PlanIndex,PlanAnnots) 
++near(X): {B specs_violated(X), B plan(PlanType,PlanId,Z,T)} <- +.lock,append("Near ",X,Print1),
+																append(Print1," violated specs ",Print2),
+																print(Print2),
+																+!update_plan(PlanType,PlanId,X)[perform]
+																, -.lock;	
+																	
++near(X): {~B specs_violated(X), B plan(PlanType,PlanId,Z,T) } <- append("Near ",X,Print1),
+																append(Print1," no violated ",Print2),
+																print(Print2);
+												
+
++!update_plan(PlanType,PlanId,X)[perform]: { B plan_annotations(PlanType,L), 
+				
+					B get_first_applicable_plan_from_updated_plans(PlanType,X,PlanId,PlanIndex,PlanAnnots),
+					B plan(PlanType,PlanId,Z,T)
 					}
 												 
 					<- -plan_annotations(PlanType,L),+plan_annotations(PlanType,UpdatedAnnotationsList),
-					print("new plan"),print(PlanIndex),print(PlanAnnots);
+					append("new plan ",PlanIndex,Print1), append(Print1," plan annots ", Print2),
+					append(Print2, PlanAnnots, Print3), 
+					print(Print3),
+					append("Removing belief and goal regarding old plan index ",PlanId,Print4),
+					print(Print4),
+					-plan(PlanType,PlanId,Z,T),
+					-!achieve_plan(PlanType,PlanId,Z)[achieve],
+					append("Adding new plan to achieve ",PlanIndex,Print5),
+					print(Print5),
+					+!achieve_plan(PlanType,PlanIndex,0)[achieve];
 												 												 
