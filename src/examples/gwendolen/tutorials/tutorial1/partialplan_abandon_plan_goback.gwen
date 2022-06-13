@@ -414,9 +414,20 @@ satisfy_spec[achieve]
 													
 													+!achieve_plan(PlanType,PlanId,Z)[achieve];
 													
-+!perform_actions([])[perform] : {True} <- print("Plan reversed"); 
-+!perform_actions([move_to(X) | T])[perform] : {True} <- move_to(X), +!perform_actions(T)[perform]; 
-+!perform_actions([print(X) | T]) [perform] : {True} <- print(X), +!perform_actions(T)[perform];
++!perform_actions([])[perform] : {~ B reversed(X), B at(Y)} <- print("Plan reversed"),
+		toString(Y,YString),
+		append("back at location ",YString,Print1),
+		print(Print1); 
+
++!perform_actions(move_to(X))[perform] : {B reversed([])} 
+				<- move_to(X), -reversed([]),  +!perform_actions([])[perform]; 
++!perform_actions(print(X)) [perform] : {B reversed([])} <- 
+			print(X),-reversed([]), +!perform_actions([])[perform]; 
+
++!perform_actions(move_to(X))[perform] : {B reversed([H | T])} 
+				<- move_to(X), -reversed([H | T]), +reversed(T), +!perform_actions(H)[perform]; 
++!perform_actions(print(X)) [perform] : {B reversed([H | T])} <- 
+			print(X),-reversed([H | T]), +reversed(T), +!perform_actions(H)[perform]; 
 													
 +at(X) : {B number_of_locations_visited(Y)} <- sum(Y,1,Z),+visited(X,Z),
  -number_of_locations_visited(Y), +number_of_locations_visited(Z),append("reached ",X,Print1), print(Print1);
@@ -450,9 +461,10 @@ satisfy_spec[achieve]
 					append("Adding new plan to achieve ",PlanIndex,Print5),
 					print(Print5),
 					print("Reversed Plan"),
+					+reversed(RPT),
 					print([RPH | RPT]),
 					+.lock,
-					+!perform_actions([RPH | RPT])[perform],
+					+!perform_actions(RPH)[perform],
 					+!achieve_plan(PlanType,PlanIndex,0)[achieve],
 					-.lock
 					;
