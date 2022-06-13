@@ -131,7 +131,7 @@ satisfied(before(X,Y)):-
 satisfied(before(X,Y)):-
 	visited(X,Tx),
 	visited(Y,Ty),
-	Tx < Ty;	
+	[Tx < Ty];	
 
 
 all_avoid([]);

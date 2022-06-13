@@ -255,7 +255,7 @@ public class DefaultEnvironment implements AILEnv {
     	if (act.getFunctor().equals("append")) {
     		StringTerm x = (StringTerm) act.getTerm(0);
     		StringTerm y = (StringTerm) act.getTerm(1);
-    		String append = x.getString() + y.getString();
+    		String append = x.getString() + y.toString();
     		VarTerm result = (VarTerm) act.getTerm(2);
     		StringTermImpl z = new StringTermImpl(append);
     		u.unifies(result, z);
