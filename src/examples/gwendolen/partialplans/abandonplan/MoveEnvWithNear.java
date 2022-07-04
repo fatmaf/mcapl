@@ -8,48 +8,44 @@ import ail.util.AILexception;
 
 public class MoveEnvWithNear extends DefaultEnvironment {
 
-	String prevloc = "l0";
-	boolean fm = true;
+	String curloc="l0";
 
 	@Override
 	public Unifier executeAction(String agName, Action act) throws AILexception {
-		if (fm) {
-			Predicate oldloc = new Predicate("at");
-			oldloc.addTerm(new Predicate(prevloc));
-			addPercept(agName, oldloc);
-			fm = false;
-		}
-		if (act.getFunctor().equals("move_to")) {
-			String moveloc = act.getTerm(0).toString();
+		if(act.getFunctor().equals("move_to"))
+		{
+			String newlocs = act.getTerm(0).toString();
 			Predicate newloc = new Predicate("at");
-			newloc.addTerm(new Predicate(moveloc));
-
-			Predicate oldloc = new Predicate("at");
-			oldloc.addTerm(new Predicate(prevloc));
-
-			removePercept(agName, oldloc);
-
-			addPercept(agName, newloc);
-			System.out.println("Removed at " + oldloc.toString());
-			System.out.println("Added at " + newloc.toString());
-			prevloc = moveloc;
-
-			Predicate nearloc = new Predicate("near");
-			nearloc.addTerm(new Predicate("l5"));
-			// adding the near percept
-			// when we get to l4 we realise that we are "near l6"
-			if (moveloc.equalsIgnoreCase("l4")) {
-				addPercept(agName, nearloc);
-
-			} else {
-				// it might be there already and we might have to remove it
-				// putting this in move because that is what decides it
-				removePercept(agName, nearloc);
+			newloc.addTerm(new Predicate(newlocs));
+			
+			Predicate oldloc = new Predicate("at"); 
+			oldloc.addTerm(new Predicate(curloc));
+			
+			removePercept(agName,oldloc); 
+			addPercept(agName,newloc);
+			curloc = newlocs;
+			
+			Predicate nearloc = new Predicate("near"); 
+			nearloc.addTerm(new Predicate("l6"));
+			//adding the near percept 
+			//when we get to l4 we realise that we are "near l6" 
+			if(newlocs.equalsIgnoreCase("l4"))
+			{
+				addPercept(agName,nearloc);
+				
 			}
-
+			else
+			{
+				// it might be there already and we might have to remove it 
+				// putting this in move because that is what decides it 
+				removePercept(agName,nearloc);
+			}
+			
+			
 		}
-		Unifier u = super.executeAction(agName, act);
-		return u;// super.executeAction(agName, act);
+		Unifier u =super.executeAction(agName, act);
+		return u;//super.executeAction(agName, act);
 	}
+	
 
 }
