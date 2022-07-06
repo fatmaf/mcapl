@@ -36,7 +36,7 @@ plans(visit(l5),[
     ])
     
 required_specification([at(l3)])
-preferred_specification([avoid(l5)])
+preferred_specification([before(l1,l3),before(l1,l5),before(l3,l5),avoid(l5)])
 
 :Reasoning Rules:
 //the basics
@@ -47,6 +47,23 @@ ismember(H, [X | T]) :-
 append([], X, X);
 append([ H | T], X , [ H | W ]) :- 
 	append(T,X,W);
+
+remove_from_list(Elem,[],[]);
+remove_from_list(Elem,[Elem|L],L);
+remove_from_list(Elem,[NotElem | L],[NotElem | NL]):-
+	remove_from_list(Elem,L,NL);
+
+remove_list_from_list([],L,L);	
+remove_list_from_list([ToRemoveH | ToRemoveT ],L,NL):-
+	remove_from_list(ToRemoveH,L,NL1),
+	remove_list_from_list(ToRemoveT,NL1,NL); 
+
+
+replaceFirst(_,_, [],[]);
+replaceFirst(O,R,[O|T],[R|T]);
+replaceFirst(O,R,[H|T],[H|T2]) :- 
+			dif(H,O),
+			replaceFirst(O,R,T,T2);
 
 //finding a plan 
 plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,PlanAnnots,[plan(CurrentLoc,PlanIndex,PlanActions,PlanAnnots) | T]);
@@ -60,6 +77,20 @@ plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,PlanAnnots):-
 	plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,PlanAnnots,L);
 
 
+		
+//update annotations 
+update_annotations(Goal,PlanIndex,ViolatedSpecs,OldPlans,NewPlans):-
+	plans(Goal,OldPlans),
+	// get the plan to change 
+	plan_exists(Source,Goal,PlanIndex,PlanActions,PlanAnnots),
+	// update its annotations 
+	remove_list_from_list(ViolatedSpecs,PlanAnnots,NewPlanAnnots),
+	//now replace this new plan with the old plan 
+	replaceFirst(plan(Source,PlanIndex,PlanActions,PlanAnnots),plan(Source,PlanIndex,PlanActions,NewPlanAnnots),OldPlans,NewPlans);
+	
+
+
+		
 
 //checking if percept violates spec
 violated(Percept,avoid(Percept));
@@ -99,11 +130,15 @@ visit(l3)[achieve]
 
 
 //find the plan
-+!visit(X)[achieve]: {B at(Y), B plan_exists(at(Y),visit(X),PlanIndex,PlanActions,PlanAnnots)} <- 
-					print("Plan exists"),
+
++!visit(X)[achieve]: {B at(Y), B plan_exists(at(Y),visit(X),PlanIndex,PlanActions,PlanAnnots), B move_history(MH)} <- 
+					print("Plan found"),
 					+current_plan(visit(X),PlanIndex),
+					-move_history(MH),
+					+move_history([move_to(Y)]),
 					+!printPlan(visit(X),PlanIndex,PlanActions,PlanAnnots)[perform],
-					+!performActions(PlanActions)[perform]; 
+					+current_plan_actions(PlanActions),
+					+!performActions[achieve]; 
 	
 	
 +!visit(X)[achieve]: {B at(Y), ~B plan_exists(at(Y),visit(X),PlanIndex,PlanActions,PlanAnnots)} <- 
@@ -112,40 +147,97 @@ visit(l3)[achieve]
 
 
 //achieve the plan 
-+!performActions([])[perform]: {B current_plan(Goal,PI)} <-
++!performActions[achieve]: {B current_plan(Goal,PI), ~B moving_back, B current_plan_actions([])} <-
+				+.lock,
+				-current_plan_actions([]),
+				+performActions,
 				print("All actions performed"), 
 				-current_plan(Goal,PI),
-				+visit(X);
+				+visit(Goal),
+				-.lock;
 				
-+!performActions([move_to(Loc)|T])[perform]: {B current_plan(Goal,PI)} <- 
++!performActions[achieve]: {B current_plan(Goal,PI), B moving_back, B move_history([])} <-
+				+.lock,
+				+performActions,
+				print("All actions performed"), 
+				-current_plan(Goal,PI),
+				-moving_back,
+				-.lock;
+				
++!performActions[achieve]: {B current_plan(Goal,PI), ~B moving_back, B current_plan_actions([move_to(Loc)|T])} <- 
+				+.lock,
 				+!appendPrint("Moving to ",Loc)[perform],
 				move_to(Loc),
 				+!updateMH(move_to(Loc))[perform],
-				+!performActions(T)[perform];
+				-current_plan_actions([move_to(Loc)|T]),
+				+current_plan_actions(T),
+				-.lock;
+				
++!performActions[achieve]: {B current_plan(Goal,PI), B moving_back, B move_history([move_to(Loc)|T])} <- 
+				+.lock,
+				+!appendPrint("Moving back to ",Loc)[perform],
+				move_to(Loc),
+				-move_history([move_to(Loc)|T]),
+				+move_history(T),
+				-.lock;
 
 +!updateMH(Move)[perform] : {B move_history(MH)} <- 
+							+.lock,
 							+!appendPrint("Move history ",MH)[perform],
 							+!appendPrint("Adding current move ",Move)[perform],
 							-move_history(MH),
 							+move_history([Move | MH]),
-							+!appendPrint("Updated Move history ",[Move | MH])[perform];
+							+!appendPrint("Updated Move history ",[Move | MH])[perform],
+							-.lock;
 //percept things 
 +at(X): {B location_count(LC)} <-
+								+.lock,
 								sum(LC,1,NewLC),
 								-location_count(LC),
 								+visited(X,NewLC),
 								+location_count(NewLC),
-								+!appendPrint("At ",X)[perform];
+								+!appendPrint("At ",X)[perform],
+								-.lock;
 								
-+near(X): {B current_spec_list(FSL), B specifications_violated(X,FSL,[])} <- 
-								+!appendPrint("Current spec list ",FSL)[perform],
-								+!appendPrint("Near ",X)[perform],
-								print("No specifications violated");
 								
 +near(X): {B current_spec_list(FSL), B specifications_violated(X,FSL,SVL)} <- 
 								+!appendPrint("Near ",X)[perform],
-								+!appendPrint("Specifications violated ",SVL)[perform];
-																					
+								+!appendPrint("Specifications violated ",SVL)[perform],
+								+!updatePlan(SVL)[perform];
++!updatePlan([])[perform] : {B current_plan(Goal,PlanInd), ~B moving_back}	 <- 
+							+!appendPrint("Updating plan for ",Goal)[perform],
+							+!appendPrint("Index ",PlanInd)[perform],
+							+!appendPrint("No update required ",SVL)[perform];
+
++!updatePlan(SVL)[perform] : {B current_plan(Goal,PlanInd), ~B moving_back }	 <- 
+							+.lock,
+							+!appendPrint("Updating plan for ",Goal)[perform],
+							+!appendPrint("Index ",PlanInd)[perform],
+							+!appendPrint("Specs violated ",SVL)[perform],
+							+!updateAnnotations(Goal,PlanInd,SVL)[perform],
+							-current_plan(Goal,PlanInd),
+							-!performActions(T)[achieve],
+							-.lock,
+							+!move_back[perform];	
+														
++!updatePlan([])[perform] : {B current_plan(Goal,PlanInd), B moving_back}	 <- 
+							print("Moving back so we dont care");
+
++!updatePlan(SVL)[perform] : {B current_plan(Goal,PlanInd), B moving_back}	 <- 
+							print("Moving back so we dont care");
+
++!updateAnnotations(Goal,PlanInd,SVL)[perform]:
+							{B update_annotations(Goal,PlanInd,SVL,OldPlans,NewPlans)} <-
+							-plans(Goal,OldPlans),
+							+plans(Goal,NewPlans);
+												
++!move_back[perform] : {B move_history(MH)} <- 
+
+						+current_plan("MoveBack",1),
+						+moving_back,
+						-move_history(MH),
+						+!performActions(MH)[perform];
+																											
 //print actions							
 +!appendPrint(PString,PVar)[perform] : {True} <- 
 							 +.lock,
@@ -155,6 +247,7 @@ visit(l3)[achieve]
 							-.lock;
 							
 +!printPlan(Goal,PlanIndex,PlanActions,PlanAnnots)[perform]: {True} <-
+	+.lock,
 	toString(Goal,PG),
 	toString(PlanIndex,PIS),
 					toString(PlanActions,PAS),
@@ -166,4 +259,5 @@ visit(l3)[achieve]
 					append(PP1,P3,PP2),
 					append(PG," ",PPG),
 					append(PPG,PP2,PP3),
-					print(PP3);
+					print(PP3),
+					-.lock;
