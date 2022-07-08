@@ -285,15 +285,18 @@ findplan[perform]
 											 +!appendPrint("Updated required spec ",NewRNoPlanSpec)[perform],
 											 +!appendPrint("Removed specs ",NewRPlanSpec)[perform],
 											 +!appendPrint("We got some plans ",FixedPlans)[perform],
-											 +!find_plans_weakening(NewRPlanSpec,FixedPlans)[perform]; 	
+											 +!find_plans_weakening(Spec,NewRPlanSpec,FixedPlans)[perform]; 	
 											 
-+!find_plans_weakening(NewRPlanSpec,SpecPlans)[perform]: {B pspec_modified(NewRPlanSpec,WeakeningSpec),
++!find_plans_weakening(Goal,NewRPlanSpec,SpecPlans)[perform]: {B pspec_modified(NewRPlanSpec,WeakeningSpec),
 														  B get_plans_for_speclist_weakening(WeakeningSpec,SpecPlans,WeakenedPlans)} 
 											<-
 											+!appendPrint("Removed specs from req ",NewRPlanSpec)[perform],
 											+!appendPrint("Weakening spec ", WeakeningSpec)[perform],
-											+!appendPrint("Weakended plans ",WeakenedPlans)[perform]
-											;							
+											+!appendPrint("Weakended plans ",WeakenedPlans)[perform],
+											+!select_first_plan(Goal,WeakenedPlans)[perform];
+											
++!select_first_plan(Goal,[plan(Source,Index,Actions,Annotations) |T])[perform] : {True} <- print("plan it");	
+														
 +!update_specs[perform]: {True} 
 					<- 
 					+!update_specs("Required")[perform],
