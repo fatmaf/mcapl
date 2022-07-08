@@ -26,6 +26,7 @@ public class MoveEnvWithNear extends DefaultEnvironment {
 	
 		if (act.getFunctor().equals("move_to")) {
 			String moveloc = act.getTerm(0).toString();
+			if(!moveloc.equalsIgnoreCase(prevloc)) {
 			Predicate newloc = new Predicate("at");
 			newloc.addTerm(new Predicate(moveloc));
 
@@ -38,7 +39,7 @@ public class MoveEnvWithNear extends DefaultEnvironment {
 			System.out.println("Removed at " + oldloc.toString());
 			System.out.println("Added at " + newloc.toString());
 			prevloc = moveloc;
-
+			}
 			Predicate nearloc = new Predicate("near");
 			nearloc.addTerm(new Predicate("l6"));
 			// adding the near percept

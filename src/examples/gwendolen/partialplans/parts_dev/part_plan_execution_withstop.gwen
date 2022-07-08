@@ -80,14 +80,25 @@ plan_exists(Goal,Source,PlanIndex,PlanActions,PlanAnnots):-
 	plan_exists(Source,Goal,PlanIndex,PlanActions,PlanAnnots,L);
 
 
-
+check_length(L,Len):-
+	length(L,Len);
+	
 :Initial Goals:
 
-achieve_plan(visit(l1),at(l0),3)[achieve]
+achieve_plan(visit(l1),3)[achieve]
+
 
 :Plans:
-
-+!achieve_plan(Goal,Source,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
++!stop_plan(l3)[perform]: {B current_plan(Goal,Index,PA)} 
+					<- print("Stopping plan"),
+					-!achieve_plan(Goal,Index)[achieve];
+					
++!stop_plan(Loc)[perform]: {B current_plan(Goal,Index,PA)} 
+					<- print("Not stopping the plan");
+					
+					
+-!achieve_plan(Goal,Index)[achieve]: {True} <- print("Plan stopped");									
++!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
 											  B plan_exists(Goal,Source,Index,Actions,Annots)
 											} 
 									<-
@@ -100,15 +111,15 @@ achieve_plan(visit(l1),at(l0),3)[achieve]
 									+!doActions[perform];
 
 
-+!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Index,[])
++!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,[])
 											} 
 									<-
 									
-									+achieve_plan(Goal,Source,Index),
+									+achieve_plan(Goal,Index),
 									+!update_move_history[perform],
 									+!appendPrint("Achieved Plan for ",Goal)[perform];
 									
-+!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Index,PlanActions)
++!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,PlanActions)
 											} 
 									<-
 									+!update_move_history[perform],
@@ -150,7 +161,8 @@ achieve_plan(visit(l1),at(l0),3)[achieve]
 			+!visitedLoc(Loc)[perform],
 			+!doneMove(Loc)[perform],
 			+!appendPrint("Visited ",Loc)[perform],
-			-.lock;			
+			-.lock,
+			+!stop_plan(Loc)[perform];			
 			
 						
 +!visitedLoc(Loc)[perform] : {B location_count(C), ~B visited(Loc,C)}
