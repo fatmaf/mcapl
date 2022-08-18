@@ -1,8 +1,10 @@
 GWENDOLEN
 
-// in this part we find a plan 
-// using the entire specification 
-// this uses the weakening and non-weakening bit 
+// in this part we
+// find a plan 
+// detect violated specifications 
+// update relevant plan annotations 
+
 
 
 :name: planexecutorA
