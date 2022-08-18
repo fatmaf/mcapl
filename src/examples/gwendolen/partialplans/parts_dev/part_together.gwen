@@ -318,9 +318,29 @@ findplan[perform]
 					<- print("Stopping plan"),
 					-!achieve_plan(Goal,Index)[achieve];
 					
+					
 +!stop_plan(Loc)[perform]: {B current_plan(Goal,Index,PA)} 
 					<- print("Not stopping the plan");
 					
++!stop_moving[perform]: {B moving} <-
+						print("Stop moving"),
+						-moving;
+
+						
++!stop_plan[perform]: {B current_plan(Goal,Index,PA),
+						~B moving} 
+					<- 
+					print("Stopping plan not moving"),
+					-!achieve_plan(Goal,Index)[achieve],
+					+!move_back[achieve];
+											
++!stop_plan[perform]: {B current_plan(Goal,Index,PA),
+						B moving} 
+					<- 
+					+!stop_moving[perform],
+					print("Stopping plan"),
+					-!achieve_plan(Goal,Index)[achieve],
+					+!move_back[achieve];
 					
 -!achieve_plan(Goal,Index)[achieve]: {True} <- -current_plan(Goal,Index),
 												print("Plan stopped");		
@@ -357,6 +377,39 @@ findplan[perform]
 									+!update_move_history[perform],
 									+!doActions[perform];
 
++!move_back[achieve]:{B move_history([FAct|TActs]),
+					  ~B move_back_list(MBL)} 
+					  <-
+					  
+					  +!stop_moving[perform],
+					  +move_back_list([FAct|TActs]),
+					  +!doMoveBackActions[perform];
+
+
+
++!move_back[achieve]:{B move_back_list([])
+					  } 
+					  <-
+					  print("Moved back"),
+					  -move_back_list([]),
+					  +move_back,
+					  +!findplan[perform]
+					  ;
+
++!move_back[achieve]:{B move_back_list([FAct|TActs])
+					  } 
+					  <-
+					  
+					  +!doMoveBackActions[perform];
+					  
+					  
++!doMoveBackActions[perform]: {B move_back_list([FAct|TActs]) }
+					<-
+					+!doAction(FAct)[perform],
+					-move_back_list([FAct|TActs]),
+					+move_back_list(TActs)
+					;
+					
 +!doActions[perform]: {B current_plan(Goal,Index,[FirstAction|ActionsTail])}
 					<-
 					+!doAction(FirstAction)[perform],
@@ -364,13 +417,55 @@ findplan[perform]
 					+current_plan(Goal,Index,ActionsTail)
 					;
 					
-+!doAction(move_to(Loc))[perform]: {~B moving}
+/**
++!doActionsMoveBack[achieve]: {B move_history([FirstAction|ActionsTail]),
+							   ~B moving_back,
+							   ~B move_back_list(MBL)}
+					<-
+					+!stop_moving[perform],
+					print("Attempting to move back"),
+					+!appendPrint("First action",FirstAction)[perform],
+					+!appendPrint("Tail ",ActionsTail)[perform],
+					+moving_back,
+					+move_back_list(ActionsTail),
+					+!doAction(FirstAction)[perform]
+					;					
+					
+
++!doActionsMoveBack[achieve]: {B move_history(MH),
+							   B moving_back,
+							   B move_back_list([])}
+					<-
+					-move_back_list([]),
+					-moving_back,
+					+!reset_move_history[perform],
+					+doActionsMoveBack,
+					print("Moved back now waiting")
+					;	
+
++!doActionsMoveBack[achieve]: {B move_history(MH),
+							   B moving_back,
+							   B move_back_list([FirstAction|ActionsTail])}
+					<-
+					+!stop_moving[perform],
+					-move_back_list([FirstAction|ActionsTail]),
+					+move_back_list(ActionsTail),
+					+!doAction(FirstAction)[perform]
+					;					
+**/
+					
++!doAction(move_to(Loc))[perform]: {~B moving, ~B at(Loc)}
 							<- 
 							+moving,
 							move_to(Loc);
 							
++!doAction(move_to(Loc))[perform]: {B at(Loc)}
+							<- 
+							print("Already at location");
+							
 +!doneMove(Loc)[perform]: {B moving}
 							<-
+							print("done move"),
 							+doAction(move_to(Loc)),
 							-moving;
 
@@ -443,7 +538,7 @@ findplan[perform]
 							print("Added new ones"),
 							print(NewL),
 							-.lock,
-							+!stop_plan(l5)[perform]
+							+!stop_plan[perform]
 							;		
 
 
