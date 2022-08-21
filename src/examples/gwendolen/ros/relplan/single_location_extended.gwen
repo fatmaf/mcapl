@@ -52,14 +52,15 @@ move_history([])
 //plans(Goal/destination, [
 //				plan(source, index, actions, annotations )...])
 
-plans(visit(tank1top),[ 
-        plan(at(door),1, [move_to(entrance),move_to(tank1top)], [visit(tank1top)])
+plans(visit(pipes),[ 
+        plan(at(door),1, [move_to(tank1top),move_to(pipes)], 
+        [visit(pipes), visit(tank1top), before(tank1top,pipes)])
            ])
     
 
 //specifications
-specification("Required",[visit(tank1top)])
-specification("Preferred",[])
+specification("Required",[visit(pipes)])
+specification("Preferred",[before(tank1top,pipes)])
 
 
 
@@ -276,7 +277,8 @@ updated_plans(PlanIndex,L,NewPlanAnnots,NewL):-
 
 :Initial Goals:
 
-doAction(move_to(entrance)) [perform]
+//doAction(move_to(tank1top))[perform]
+findplan[perform]
 
 :Plans:
 
@@ -353,6 +355,7 @@ doAction(move_to(entrance)) [perform]
 					<- 
 					print("Stopping plan not moving"),
 					-!achieve_plan(Goal,Index)[achieve],
+					-current_plan(Goal,Index,PA),
 					+!move_back[achieve];
 											
 +!stop_plan[perform]: {B current_plan(Goal,Index,PA),
@@ -361,13 +364,16 @@ doAction(move_to(entrance)) [perform]
 					+!stop_moving[perform],
 					print("Stopping plan"),
 					-!achieve_plan(Goal,Index)[achieve],
+					-current_plan(Goal,Index,PA),
 					+!move_back[achieve];
 					
--!achieve_plan(Goal,Index)[achieve]: {True} <- -current_plan(Goal,Index),
-												print("Plan stopped");		
-																			
+//-!achieve_plan(Goal,Index)[achieve]: {True} <- -current_plan(Goal,Index),
+//												print("Plan stopped");		
+
++!achieve_plan(Goal,Index)[achieve]: {B moving} <- do_nothing;																			
 +!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
-											  B plan_exists(Goal,Source,Index,Actions,Annots)
+									B plan_exists(Goal,Source,Index,Actions,Annots),
+									~B moving
 											} 
 									<-
 									+current_plan(Goal,Index,Actions),
@@ -379,8 +385,8 @@ doAction(move_to(entrance)) [perform]
 									+!doActions[perform];
 
 
-+!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,[])
-											} 
++!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,[]),
+										~B moving	} 
 									<-
 									
 									+achieve_plan(Goal,Index),
@@ -392,8 +398,8 @@ doAction(move_to(entrance)) [perform]
 									+!appendPrint("Achieved Plan for ",Goal)[perform],
 									+!findplan[perform];
 									
-+!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,PlanActions)
-											} 
++!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,PlanActions),
+										~B moving	} 
 									<-
 									+!update_move_history[perform],
 									+!doActions[perform];
@@ -440,9 +446,12 @@ doAction(move_to(entrance)) [perform]
 					
 
 					
-+!doAction(move_to(Loc))[perform]: {~B moving, ~B at(Loc), B location_coordinate(Loc,X,Y,Z)}
++!doAction(move_to(Loc))[perform]: {~B going(L1), 
+									~B moving, 
+									~B at(Loc), 
+									B location_coordinate(Loc,X,Y,Z)}
 							<- 
-						
+							+going(Loc),
 							+moving,
 							move(X,Y,Z);
 							//move_to(Loc);
@@ -451,8 +460,9 @@ doAction(move_to(entrance)) [perform]
 							<- 
 							print("Already at location");
 							
-+!doneMove(Loc)[perform]: {B moving}
++!doneMove(Loc)[perform]: {B moving, B going(Loc)}
 							<-
+							-going(Loc),
 							print("done move"),
 							+doAction(move_to(Loc)),
 							-moving;
@@ -470,10 +480,10 @@ doAction(move_to(entrance)) [perform]
 							+move_history([move_to(Loc) | MH]),
 							+!printMH("After update ")[perform];
 							
-+movebase_result(Id,3) : { B moving } <- 
++movebase_result(Id,3) : { B moving, B going(Loc) } <- 
 						 
 						print("Movement to location "),
-						print(L1),
+						print(Loc),
 						print(" ended with success."),
 			+!doneMove(Loc)[perform];
 															
