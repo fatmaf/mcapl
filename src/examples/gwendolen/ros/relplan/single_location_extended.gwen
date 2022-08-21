@@ -485,6 +485,7 @@ findplan[perform]
 						print("Movement to location "),
 						print(Loc),
 						print(" ended with success."),
+			+!visitedLoc(Loc)[perform],
 			+!doneMove(Loc)[perform];
 															
 +at(Loc): {True} <- 
