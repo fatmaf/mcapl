@@ -127,6 +127,15 @@ filter_satisfied_specs([OrigSpecsH | OrigSpecsT], FiltSpecs):-
 	filter_satisfied_specs(OrigSpecsT,FiltSpecs);
 filter_satisfied_specs([OrigSpecsH | OrigSpecsT], [OrigSpecsH | FiltSpecs]):-
 	filter_satisfied_specs(OrigSpecsT,FiltSpecs);
+
+//listing satisfied and unsatisfied specs 
+break_specs_satisfied_otherwise([],[],[]);
+break_specs_satisfied_otherwise([OrigSpecsH | OrigSpecsT], [OrigSpecsH | OtherSatSpecs], Otherwise):-
+	satisfied(OrigSpecsH),
+	break_specs_satisfied_otherwise(OrigSpecsT,OtherSatSpecs,Otherwise);
+break_specs_satisfied_otherwise([OrigSpecsH | OrigSpecsT],  OtherSatSpecs, [OrigSpecsH | Otherwise]):-
+	break_specs_satisfied_otherwise(OrigSpecsT,OtherSatSpecs,Otherwise);
+
 	
 //when we're all done we'll only have avoid specs 
 //so we can check if all we're left with is avoid specs 
@@ -310,11 +319,21 @@ findplan[perform]
 											+!select_first_plan(Goal,WeakenedPlans)[perform];
 
 +!select_first_plan([],[]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
-											print("Or something strange happened");											
+											print("Or something strange happened"),
+											+!get_satisfied_otherwise_specs[perform];				
+											
+																		
 +!select_first_plan(Goal,[plan(Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
 											+!achieve_plan(Goal,Index)[achieve];	
+
++!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
+											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other)}
+											<-
+											+!appendPrint("Original list ",CSpecs)[perform],
+											+!appendPrint("Satisfied ",SatSpecs)[perform],
+											+!appendPrint("Not satisfied ",Other)[perform];
 														
 +!update_specs[perform]: {True} 
 					<- 
