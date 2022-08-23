@@ -42,6 +42,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	float radiation = 0;
 	double at_epsilon_error = 0.5;
+	double near_error = 2;
 
 	HashMap<String, AbstractMap.SimpleEntry<Double, Double>> location_coordinates;
 	HashMap<String, Predicate> location_predicates;
@@ -183,13 +184,21 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	boolean atLoc(double cx, double cy, AbstractMap.SimpleEntry<Double, Double> loc) {
-		return atLoc(cx, cy, loc.getKey(), loc.getValue());
+		return epsilonFromLoc(cx, cy, loc.getKey(), loc.getValue(),at_epsilon_error);
 	}
 
-	boolean atLoc(double cx, double cy, double lx, double ly) {
+	boolean nearLoc(double cx, double cy, String loc) {
+		return nearLoc(cx, cy, location_coordinates.get(loc));
+	}
+
+	boolean nearLoc(double cx, double cy, AbstractMap.SimpleEntry<Double, Double> loc) {
+		return epsilonFromLoc(cx, cy, loc.getKey(), loc.getValue(),this.near_error);
+	}
+	
+	boolean epsilonFromLoc(double cx, double cy, double lx, double ly,double epsilon) {
 		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
 		dist = Math.sqrt(dist);
-		if (dist < at_epsilon_error)
+		if (dist < epsilon)
 			return true;
 
 		return false;

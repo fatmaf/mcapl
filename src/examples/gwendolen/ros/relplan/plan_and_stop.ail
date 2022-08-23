@@ -4,8 +4,8 @@ mas.builder = gwendolen.GwendolenMASBuilder
 env = gwendolen.ros.relplan.RosEnvAtPercept
 
 log.warning = ail.mas.DefaultEnvironment
-//log.fine = ail.semantics.AILAgent
-//log.fine = ail.semantics.operationalrules
+//log.warning = ail.semantics.AILAgent
+//log.warning = ail.semantics.operationalrules
 //log.warning = ajpf.MCAPLAgent
 log.format = brief
 

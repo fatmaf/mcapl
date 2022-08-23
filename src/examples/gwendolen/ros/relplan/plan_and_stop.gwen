@@ -53,19 +53,19 @@ move_history([])
 //				plan(source, index, actions, annotations )...])
 
 plans(visit(pipes),[ 
-        plan(at(tank2top),1, [move_to(tank1top),move_to(pipes)], 
-        [visit(pipes), visit(tank1top), before(tank1top,pipes),before(tank2top,pipes)])
+        plan(at(tank1right),1, [move_to(dangerroomsideend),move_to(pipes)], 
+        [visit(pipes), visit(dangerroomsideend), before(tank1top,pipes)])
            ])
            
-plans(visit(tank2top), [
-		plan(at(door),1,[move_to(bigtankfront),move_to(tank2top)],
-			[visit(bigtankfront),visit(tank2top),before(bigtankfront,tank2top),before(tank2top,pipes)])
+plans(visit(tank1right), [
+		plan(at(door),1,[move_to(bigtankfront),move_to(tank2top),move_to(tank1top),move_to(tank1right)],
+			[visit(bigtankfront),visit(tank2top),visit(tank1right),before(bigtankfront,tank2top),before(tank1right,pipes)])
 		])
     
 
 //specifications
-specification("Required",[visit(tank2top),visit(pipes)])
-specification("Preferred",[before(tank2top,pipes),before(tank1top,pipes)])
+specification("Required",[visit(tank1right),visit(pipes)])
+specification("Preferred",[before(tank1right,pipes)])
 
 
 
@@ -297,12 +297,13 @@ findplan[perform]
 :Plans:
 
 +!findplan[perform]: {True} <-
+				print("finding plan"),
 				+!update_specs[perform],
 				+!get_first_spec_plans[perform];
 				
 +!get_first_spec_plans[perform]: {B first_spec_with_plan(Spec,AllSpecPlans)} <-
 					+!appendPrint("Found plan for ", Spec)[perform],
-					+!appendPrint("Plan set ", AllSpecPlans)[perform],
+					+!appendPrint("Plan set all plans", AllSpecPlans)[perform],
 					
 					+!find_plans_no_weakening(Spec,AllSpecPlans)[perform];
 					
@@ -312,7 +313,7 @@ findplan[perform]
 											 <- 
 											 +!appendPrint("Updated required spec ",NewRNoPlanSpec)[perform],
 											 +!appendPrint("Removed specs ",NewRPlanSpec)[perform],
-											 +!appendPrint("We got some plans ",FixedPlans)[perform],
+											 +!appendPrint("We got some plans no weakening",FixedPlans)[perform],
 											 +!find_plans_weakening(Spec,NewRPlanSpec,FixedPlans)[perform]; 	
 											 
 +!find_plans_weakening(Goal,NewRPlanSpec,SpecPlans)[perform]: {B pspec_modified(NewRPlanSpec,WeakeningSpec),
@@ -320,7 +321,7 @@ findplan[perform]
 											<-
 											+!appendPrint("Removed specs from req ",NewRPlanSpec)[perform],
 											+!appendPrint("Weakening spec ", WeakeningSpec)[perform],
-											+!appendPrint("Weakended plans ",WeakenedPlans)[perform],
+											+!appendPrint("Weakend plans ",WeakenedPlans)[perform],
 											+!select_first_plan(Goal,WeakenedPlans)[perform];
 
 +!select_first_plan([],[]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
@@ -361,12 +362,14 @@ findplan[perform]
 						+updated_specifications(Type,FiltSpecList)
 						;
 						
-+!stop_plan(l5)[perform]: {B current_plan(Goal,Index,PA)} 
-					<- print("Stopping plan"),
-					-!achieve_plan(Goal,Index)[achieve];
++!stop_plan(tank1top)[perform]: {True} 
+					<- 
+					print("Stopping plan"),
+					//-!achieve_plan(Goal,Index)[achieve];
+					+!stop_plan[achieve];
 					
 					
-+!stop_plan(Loc)[perform]: {B current_plan(Goal,Index,PA)} 
++!stop_plan(Loc)[perform]: {True} 
 					<- print("Not stopping the plan");
 					
 +!stop_moving[perform]: {B moving} <-
@@ -374,22 +377,33 @@ findplan[perform]
 						-moving;
 
 						
-+!stop_plan[perform]: {B current_plan(Goal,Index,PA),
++!stop_plan[achieve]: {B current_plan(Goal,Index,PA),
 						~B moving} 
 					<- 
+					+moving_back,
+					+stop_plan,
 					print("Stopping plan not moving"),
 					-!achieve_plan(Goal,Index)[achieve],
 					-current_plan(Goal,Index,PA),
 					+!move_back[achieve];
+					
++!stop_plan[achieve]: {
+						~B moving} 
+					<- 
+					+moving_back,
+					+stop_plan,
+					print("Stopping plan not moving"),
+					+!move_back[achieve];
 											
-+!stop_plan[perform]: {B current_plan(Goal,Index,PA),
++!stop_plan[achieve]: {
 						B moving} 
 					<- 
-					+!stop_moving[perform],
-					print("Stopping plan"),
-					-!achieve_plan(Goal,Index)[achieve],
-					-current_plan(Goal,Index,PA),
-					+!move_back[achieve];
+					do_nothing;
+				//	+!stop_moving[perform],
+				//	print("Stopping plan"),
+				//	-!achieve_plan(Goal,Index)[achieve],
+				//	-current_plan(Goal,Index,PA),
+				//	+!move_back[achieve];
 					
 //-!achieve_plan(Goal,Index)[achieve]: {True} <- -current_plan(Goal,Index),
 //												print("Plan stopped");		
@@ -397,9 +411,11 @@ findplan[perform]
 +!achieve_plan(Goal,Index)[achieve]: {B moving} <- do_nothing;																			
 +!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
 									B plan_exists(Goal,Source,Index,Actions,Annots),
-									~B moving
+									~B moving,
+									~B moving_back
 											} 
 									<-
+									print("Achieving new plan"),
 									+current_plan(Goal,Index,Actions),
 									+.lock,
 									+!reset_move_history[perform],
@@ -410,49 +426,55 @@ findplan[perform]
 
 
 +!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,[]),
-										~B moving	} 
+										~B moving,
+										~B moving_back	} 
 									<-
-									
+									print("Achieved current plan"),
 									+achieve_plan(Goal,Index),
-									print("Removed belief of current plan"),
-									print(Goal),
-									print(Index),
 									-current_plan(Goal,Index,[]),
 									+!update_move_history[perform],
 									+!appendPrint("Achieved Plan for ",Goal)[perform],
 									+!findplan[perform];
 									
 +!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,PlanActions),
-										~B moving	} 
+										~B moving,
+										~B moving_back	} 
 									<-
+									print("Achieving plan"),
 									+!update_move_history[perform],
 									+!doActions[perform];
 
 +!move_back[achieve]:{B move_history([FAct|TActs]),
-					  ~B move_back_list(MBL)} 
+					  ~B move_back_list(MBL),
+					  ~B moving} 
 					  <-
 					  
-					  +!stop_moving[perform],
+					//  +!stop_moving[perform],
+						print("Moving back"),
 					  +move_back_list([FAct|TActs]),
 					  +!doMoveBackActions[perform];
 
 
 
-+!move_back[achieve]:{B move_back_list([])
++!move_back[achieve]:{B move_back_list([]),
+					~B moving
 					  } 
 					  <-
 					  print("Moved back"),
 					  -move_back_list([]),
 					  +move_back,
+					  -moving_back,
 					  +!findplan[perform]
 					  ;
 
-+!move_back[achieve]:{B move_back_list([FAct|TActs])
++!move_back[achieve]:{B move_back_list([FAct|TActs]),
+					~B moving
 					  } 
 					  <-
-					  
+					  print("Moving back"),
 					  +!doMoveBackActions[perform];
 					  
++!move_back[achieve]:{B moving} <- do_nothing;
 					  
 +!doMoveBackActions[perform]: {B move_back_list([FAct|TActs]) }
 					<-
@@ -475,6 +497,7 @@ findplan[perform]
 									~B at(Loc), 
 									B location_coordinate(Loc,X,Y,Z)}
 							<- 
+							+!appendPrint("moving to ",Loc)[perform],
 							+going(Loc),
 							+moving,
 							move(X,Y,Z);
@@ -509,8 +532,21 @@ findplan[perform]
 						print("Movement to location "),
 						print(Loc),
 						print(" ended with success."),
-			+!visitedLoc(Loc)[perform],
-			+!doneMove(Loc)[perform];
+						+!visitedLoc(Loc)[perform],
+						+!doneMove(Loc)[perform],
+						+!stop_plan(Loc)[perform];
+						
++movebase_result(Id,MBRes) : { B moving, B going(Loc) } <- 
+						 
+						print("Unable to get to location "),
+						print(Loc),
+						print(" error code "),
+						print(MBRes),
+						print(" but will just assume we got there"),
+						+!visitedLoc(Loc)[perform],
+						+!doneMove(Loc)[perform],
+						+!stop_plan(Loc)[perform];
++movebase_result(Id,MBRes) : {True} <- +!appendPrint("Move base result id ",MBRes)[perform];
 															
 +at(Loc): {True} <- 
 			+.lock,
