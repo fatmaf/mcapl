@@ -45,8 +45,11 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	double near_error = 2;
 
 	HashMap<String, AbstractMap.SimpleEntry<Double, Double>> location_coordinates;
-	HashMap<String, Predicate> location_predicates;
+	HashMap<String, Predicate> at_location_predicates;
+	HashMap<String, Predicate> near_location_predicates;
+	ArrayList<Predicate> currently_near;
 	Predicate currently_at;
+	String currently_at_string;
 	String dup_agentName;
 
 	public RosEnvAtPercept() {
@@ -99,81 +102,106 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<Vector3> unpacker = new MessageUnpacker<Vector3>(Vector3.class);
 						Vector3 msg = unpacker.unpackRosMessage(data);
-						//AJPFLogger.warning(logname, "Current pose: " + msg.x + " " + msg.y + " " + msg.z);
-						
+						// AJPFLogger.warning(logname, "Current pose: " + msg.x + " " + msg.y + " " +
+						// msg.z);
+
 						doAt(msg);
-						
+						doNear(msg);
 
 					}
 				});
 
 	}
 
-	void doAt(Vector3 msg)
-	{
-		// do nothing if gwendolen hasn't started 
+	void doNear(Vector3 msg) {
+
+		if (dup_agentName != null) {
+			ArrayList<Predicate> nearlocs = this.getNearLocs(msg.x, msg.y);
+			if (this.currently_near == null) {
+				// just has all the currently near percept s
+				currently_near = new ArrayList<>();
+
+			}
+
+			// this is so we dont get multiple "near" percepts
+			// which may be bad actually
+			// if the percept is not in our new near locs
+			// we can remove it
+			for (Predicate p : currently_near) {
+				if (!nearlocs.contains(p)) {
+					removePercept(dup_agentName, p);
+					AJPFLogger.warning(logname, "Removing percept " + p.toString());
+				}
+			}
+			// we add all the percepts that are in our new near locs
+			// not adding the ones that are already there (as in currently near)
+			for (Predicate p : nearlocs) {
+				if (!currently_near.contains(p)) {
+					addPercept(dup_agentName, p);
+					AJPFLogger.warning(logname, "Adding percept " + p.toString());
+				}
+			}
+			// then we can set our currently near to this new thing
+			currently_near.clear();
+			currently_near.addAll(nearlocs);
+		}
+	}
+
+	void doAt(Vector3 msg) {
+		// do nothing if gwendolen hasn't started
 		// needs to change maybe
-		
+
 		if (dup_agentName != null) {
 			Predicate current_loc = getLoc(msg.x, msg.y);
-			
-			
-			
-			// we are currently no where 
+
+			// we are currently no where
 			// and we are actually no where
 			// do nothing
-			if(currently_at==null)
-			{
-				// we are currently no where 
-				// and we are actually some where 
+			if (currently_at == null) {
+				// we are currently no where
+				// and we are actually some where
 				// tell us where we are
-				if(current_loc!=null)
-				{
-					AJPFLogger.warning(logname,"Adding percept "+current_loc.toString());
+				if (current_loc != null) {
+					AJPFLogger.warning(logname, "Adding percept " + current_loc.toString());
 					addPercept(dup_agentName, current_loc);
 					currently_at = current_loc;
 				}
 			}
 
-	
-			else 
-			{
-				if(current_loc!=null)
-				{
-					//we are currently somewhere 
-					// and we are actually there 
-					
-					// we are currently somewhere 
-					// and we are actually somewhere else 
-					
-					if(!currently_at.getTerm(0).equals(current_loc.getTerm(0)))
-					{
-						AJPFLogger.warning(logname,"Removing percept "+currently_at.toString());
+			else {
+				if (current_loc != null) {
+					// we are currently somewhere
+					// and we are actually there
+
+					// we are currently somewhere
+					// and we are actually somewhere else
+
+					if (!currently_at.getTerm(0).equals(current_loc.getTerm(0))) {
+						AJPFLogger.warning(logname, "Removing percept " + currently_at.toString());
 						removePercept(dup_agentName, currently_at);
-						
-						AJPFLogger.warning(logname,"Adding percept "+current_loc.toString());
+
+						AJPFLogger.warning(logname, "Adding percept " + current_loc.toString());
 						addPercept(dup_agentName, current_loc);
 						currently_at = current_loc;
-						
+
 					}
-				}
-				else
-				{
-					// we are currently somewhere 
-					// and we are actually no where 
-					AJPFLogger.warning(logname,"Removing percept "+currently_at.toString());
+				} else {
+					// we are currently somewhere
+					// and we are actually no where
+					AJPFLogger.warning(logname, "Removing percept " + currently_at.toString());
 					removePercept(dup_agentName, currently_at);
-					currently_at = current_loc; 
+					currently_at = current_loc;
 				}
 			}
 
 		}
 	}
+
 	Predicate getLoc(double cx, double cy) {
 		// go over all the location coordinates
 		for (String loc : this.location_coordinates.keySet()) {
 			if (atLoc(cx, cy, loc)) {
-				return this.location_predicates.get(loc);
+				return this.at_location_predicates.get(loc);
 			}
 		}
 		return null;
@@ -184,7 +212,18 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	boolean atLoc(double cx, double cy, AbstractMap.SimpleEntry<Double, Double> loc) {
-		return epsilonFromLoc(cx, cy, loc.getKey(), loc.getValue(),at_epsilon_error);
+		return epsilonFromLoc(cx, cy, loc.getKey(), loc.getValue(), at_epsilon_error);
+	}
+
+	ArrayList<Predicate> getNearLocs(double cx, double cy) {
+		ArrayList<Predicate> nearlocs = new ArrayList<>();
+		// not excluding at loc, check for this in the beliefs in gwendolen
+		for (String loc : this.location_coordinates.keySet()) {
+			if (nearLoc(cx, cy, loc)) {
+				nearlocs.add(this.near_location_predicates.get(loc));
+			}
+		}
+		return nearlocs;
 	}
 
 	boolean nearLoc(double cx, double cy, String loc) {
@@ -192,10 +231,23 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	boolean nearLoc(double cx, double cy, AbstractMap.SimpleEntry<Double, Double> loc) {
-		return epsilonFromLoc(cx, cy, loc.getKey(), loc.getValue(),this.near_error);
+		return distanceFromLocBetween(cx, cy, loc.getKey(), loc.getValue(), this.near_error,this.at_epsilon_error);
 	}
-	
-	boolean epsilonFromLoc(double cx, double cy, double lx, double ly,double epsilon) {
+
+	boolean distanceFromLocBetween(double cx, double cy, double lx, double ly, double upperBound, double lowerBound) {
+		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
+		dist = Math.sqrt(dist);
+		if (dist < upperBound) {
+			if (dist >= lowerBound) {
+				return true;
+			}
+
+		}
+		return false;
+
+	}
+
+	boolean epsilonFromLoc(double cx, double cy, double lx, double ly, double epsilon) {
 		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
 		dist = Math.sqrt(dist);
 		if (dist < epsilon)
@@ -370,13 +422,14 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 				if (aliteral.getFunctor().equals("location_coordinate")) {
 					if (this.location_coordinates == null) {
 						this.location_coordinates = new HashMap<String, SimpleEntry<Double, Double>>();
-						this.location_predicates = new HashMap<String, Predicate>();
+						this.at_location_predicates = new HashMap<String, Predicate>();
+						this.near_location_predicates = new HashMap<String, Predicate>();
 					}
 					add_coordinates_and_predicate(aliteral);
 				}
 			}
-			// maybe add a predicate for unknown 
-			// but leave that for later 
+			// maybe add a predicate for unknown
+			// but leave that for later
 		}
 		super.init_after_adding_agents();
 	}
@@ -390,9 +443,12 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 		double y = ((NumberTerm) loc_coordinate.getTerm(2)).solve();
 		pair = create_pair(x, y);
 		this.location_coordinates.put(locname, pair);
-		Predicate p = new Predicate("at");
-		p.addTerm(loc_pred);
-		this.location_predicates.put(locname, p);
+		Predicate at_pred = new Predicate("at");
+		at_pred.addTerm(loc_pred);
+		this.at_location_predicates.put(locname, at_pred);
+		Predicate near_pred = new Predicate("near");
+		near_pred.addTerm(loc_pred);
+		this.near_location_predicates.put(locname, near_pred);
 	}
 
 	AbstractMap.SimpleEntry<Double, Double> create_pair(double x, double y) {
