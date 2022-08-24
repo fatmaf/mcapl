@@ -54,18 +54,22 @@ move_history([])
 
 plans(visit(pipes),[ 
         plan(at(tank1right),1, [move_to(dangerroomsideend),move_to(pipes)], 
-        [visit(pipes), visit(dangerroomsideend), before(tank1top,pipes)])
+        [visit(pipes), visit(dangerroomsideend), before(tank1right,pipes),avoid(dangerroomsideend)]),
+        plan(at(tank1right),2, [move_to(dangerroomside),move_to(entrance),
+        move_to(stairs),move_to(pipes)],
+        [visit(pipes),visit(dangerroomside),before(tank1right,pipes),avoid(dangerroomsideend)])
            ])
            
 plans(visit(tank1right), [
 		plan(at(door),1,[move_to(bigtankfront),move_to(tank2top),move_to(tank1top),move_to(tank1right)],
-			[visit(bigtankfront),visit(tank2top),visit(tank1right),before(bigtankfront,tank2top),before(tank1right,pipes)])
+			[visit(bigtankfront),visit(tank2top),visit(tank1right),before(bigtankfront,tank2top),before(tank1right,pipes)
+			,avoid(dangerroomsideend)])
 		])
     
 
 //specifications
 specification("Required",[visit(tank1right),visit(pipes)])
-specification("Preferred",[before(tank1right,pipes)])
+specification("Preferred",[before(tank1right,pipes),avoid(dangerroomsideend)])
 
 
 
@@ -362,11 +366,11 @@ findplan[perform]
 						+updated_specifications(Type,FiltSpecList)
 						;
 						
-+!stop_plan(tank1top)[perform]: {True} 
-					<- 
-					print("Stopping plan"),
-					//-!achieve_plan(Goal,Index)[achieve];
-					+!stop_plan[achieve];
+//+!stop_plan(tank1top)[perform]: {True} 
+//					<- 
+//					print("Stopping plan"),
+//					//-!achieve_plan(Goal,Index)[achieve];
+//					+!stop_plan[achieve];
 					
 					
 +!stop_plan(Loc)[perform]: {True} 
@@ -561,12 +565,12 @@ findplan[perform]
 						sum(C,1,NewC),
 						+location_count(NewC);
 						
-+near(Loc): {True} <- +.lock, +!appendPrint("near ",Loc)[perform], -.lock;
+//+near(Loc): {True} <- +.lock, +!appendPrint("near ",Loc)[perform], -.lock;
 //
-//+near(Loc): {B combined_specifications(CSpecs) } <- 
-//					+!appendPrint("Original Specs ",CSpecs)[perform],
-//					+!appendPrint("Near ", Loc)[perform],
-//					+!get_violations(Loc,CSpecs)[perform];						
++near(Loc): {B combined_specifications(CSpecs) } <- 
+					+!appendPrint("Original Specs ",CSpecs)[perform],
+					+!appendPrint("Near ", Loc)[perform],
+					+!get_violations(Loc,CSpecs)[perform];						
 						
 +!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
 									 B current_plan(Goal,PlanIndex,PActions)}
