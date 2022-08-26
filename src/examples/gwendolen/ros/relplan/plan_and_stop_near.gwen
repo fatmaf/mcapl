@@ -70,10 +70,10 @@ plans(visit(tank1right), [
     
 
 //specifications
-specification("Required",[visit(tank1right),visit(pipes)])
-specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
-
-
+//specification("Required",[visit(tank1right),visit(pipes)])
+//specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
+specification("Required",[visit(tank1right)])
+specification("Preferred",[avoid(tank2top)])
 
 
 :Reasoning Rules:
@@ -379,9 +379,11 @@ findplan[perform]
 //					<- print("Not stopping the plan");
 					
 +!stop_moving_now[perform]: {B moving} <-
+						+.lock,
 						cancel_goal,
 						+cancelled_goal,
-						print("Stop moving");
+						print("Sent goal cancel request"),
+						-.lock;
 
 +!stop_plan[achieve]: {B current_plan(Goal,Index,PA),
 						~B moving,
