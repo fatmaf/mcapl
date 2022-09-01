@@ -231,7 +231,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	boolean nearLoc(double cx, double cy, AbstractMap.SimpleEntry<Double, Double> loc) {
-		return distanceFromLocBetween(cx, cy, loc.getKey(), loc.getValue(), this.near_error,this.at_epsilon_error);
+		return distanceFromLocBetween(cx, cy, loc.getKey(), loc.getValue(), this.near_error, this.at_epsilon_error);
 	}
 
 	boolean distanceFromLocBetween(double cx, double cy, double lx, double ly, double upperBound, double lowerBound) {
@@ -321,9 +321,10 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 			NumberTerm ly = new NumberTermImpl(y);
 			act.getTerm(0).unifies(lx, u);
 			act.getTerm(1).unifies(ly, u);
-		} else if (actionname.equals("cancel_goal"))
-		{
+		} else if (actionname.equals("cancel_goal")) {
 			cancel_goal();
+		} else if (actionname.equals("debug")) {
+			System.out.println("Debugging stuff");
 		}
 
 		Unifier theta = super.executeAction(agName, act);
@@ -380,6 +381,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 		Publisher move_base = new Publisher("/gwendolen_to_move_base", "geometry_msgs/Vector3", bridge);
 		move_base.publish(new Vector3(0, 0, 0));
 	}
+
 	public void keep_moving(int period, double lx, double ly, double lz, double ax, double ay, double az) {
 		PeriodicPublisher cmd_vel = new PeriodicPublisher("/cmd_vel", "geometry_msgs/Twist", bridge);
 
