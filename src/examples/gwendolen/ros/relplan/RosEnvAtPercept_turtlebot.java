@@ -35,14 +35,14 @@ import ros.msgs.std_msgs.PrimitiveMsg;
 import ros.tools.MessageUnpacker;
 import ros.tools.PeriodicPublisher;
 
-public class RosEnvAtPercept extends DefaultEnvironment {
+public class RosEnvAtPercept_turtlebot extends DefaultEnvironment {
 	static final String logname = "gwendolen.ros.rv_test.RosEnvAtPercept";
 
 	RosBridge bridge = new RosBridge();
 
 	float radiation = 0;
-	double at_epsilon_error = 0.5;
-	double near_error = 3;
+	double at_epsilon_error = 0.1;
+	double near_error = 1;
 
 	HashMap<String, AbstractMap.SimpleEntry<Double, Double>> location_coordinates;
 	HashMap<String, Predicate> at_location_predicates;
@@ -52,7 +52,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	String currently_at_string;
 	String dup_agentName;
 
-	public RosEnvAtPercept() {
+	public RosEnvAtPercept_turtlebot() {
 		super();
 
 		bridge.connect("ws://localhost:9090", true);

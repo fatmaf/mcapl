@@ -61,10 +61,10 @@ plans(visit(pipes),[
            ])
            
 plans(visit(tank1right), [
-		plan(at(door),1,[move_to(bigtankfront),move_to(tank2top),move_to(tank1top),move_to(tank1right)],
+		plan(at(door),1,[move_to(bigtankfront),move_to(tank1top),move_to(tank1right)],
 		[visit(tank1right),avoid(tank2top)]),
 		
-		plan(at(door),3,[move_to(stairs),move_to(pipes),move_to(tank1right)],[visit(tank1right),avoid(tank2top)]),
+		plan(at(door),3,[move_to(entrance),move_to(stairs),move_to(pipes),move_to(tank1right)],[visit(tank1right),avoid(tank2top)]),
 		plan(at(door),2,[move_to(tank1top),move_to(tank1right)],[visit(tank1right),avoid(tank2top)])
 		])
     
@@ -394,6 +394,7 @@ findplan[perform]
 						+.lock,
 						cancel_goal,
 						+cancelled_goal,
+						+cancelled_goal_not_done,
 						print("Sent goal cancel request"),
 						-.lock;
 
@@ -510,6 +511,7 @@ findplan[perform]
 					  <-
 					  print("Moved back"),
 					  -move_back_list([]),
+					  -cancelled_goal,
 					  +move_back,
 					  -moving_back,
 					  +!findplan[perform]
@@ -636,12 +638,14 @@ findplan[perform]
 //						print(" but will just assume we got there"),
 //						+!move_cleanup[perform];
 
-+!move_cleanup[perform]: {B moving, B going(Loc), B cancelled_goal } <-
++!move_cleanup[perform]: {B moving, B going(Loc), B cancelled_goal_not_done } <-
 						+.lock,
 						print(" we did not visit the location because we cancelled the goal in time"), 
+						-cancelled_goal_not_done,
 						+!doneMove(Loc)[perform],
+						
 						-.lock;					
-+!move_cleanup[perform]: {B moving, B going(Loc), ~B cancelled_goal } <-
++!move_cleanup[perform]: {B moving, B going(Loc), ~B cancelled_goal_not_done } <-
 						+.lock,
 						print(" but will just assume we got there"),
 						+!visitedLoc(Loc)[perform],
