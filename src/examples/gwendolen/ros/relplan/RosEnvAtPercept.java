@@ -44,6 +44,8 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	double at_epsilon_error = 0.5;
 	double near_error = 3;
 
+	String radiation_status = null;
+	Literal current_radiation_percept = null;
 	HashMap<String, AbstractMap.SimpleEntry<Double, Double>> location_coordinates;
 	HashMap<String, Predicate> at_location_predicates;
 	HashMap<String, Predicate> near_location_predicates;
@@ -93,6 +95,8 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 						MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
 						Radiation msg = unpacker.unpackRosMessage(data);
 						radiation = msg.value;
+						receive_inspect();
+						// System.out.println("Radiation: "+radiation);
 					}
 				});
 
@@ -399,21 +403,72 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	public void receive_inspect() {
-		String status = null;
-		System.out.println("Radiation: " + radiation);
-		if (radiation >= 250) {
-			status = "red";
-			Literal rad = new Literal("danger_red");
-			addPercept(rad);
-		} else if (radiation >= 120) {
-			status = "orange";
-			Literal rad = new Literal("danger_orange");
-			addPercept(rad);
+		// String status = null;
+		//System.out.println("Radiation: " + radiation);
+		boolean addRad = false;
+		boolean removeRad = false;
+		if (radiation >= 100) {
+
+			if (radiation_status != null) {
+				if (!radiation_status.contentEquals("red")) {
+					radiation_status = "red";
+					// Literal rad = new Literal("danger_red");
+					// addPercept(rad);
+					addRad = true;
+					removeRad = true;
+				}
+			} else {
+				radiation_status = "red";
+				addRad = true;
+				removeRad = false;
+			}
+
+		} else if (radiation >= 50) {
+			if (radiation_status != null) {
+				if (!radiation_status.contentEquals("orange")) {
+					radiation_status = "orange";
+					// Literal rad = new Literal("danger_red");
+					// addPercept(rad);
+					addRad = true;
+					removeRad = true;
+				}
+			} else {
+				radiation_status = "orange";
+				addRad = true;
+				removeRad = false;
+			}
+
 		} else {
-			status = "green";
+			if (radiation_status != null) {
+				if (!radiation_status.contentEquals("green")) {
+					radiation_status = "green";
+					// Literal rad = new Literal("danger_red");
+					// addPercept(rad);
+					addRad = true;
+					removeRad = true;
+				}
+			} else {
+				radiation_status = "green";
+				addRad = true;
+				removeRad = false;
+			}
+
+		}
+		// so if we have to add the status
+		// we do
+		// otherwise we dont
+		if (removeRad) {
+			removePercept(this.current_radiation_percept);
+			System.out.println("Removing percept "+this.current_radiation_percept.toString());
+
+		}
+		if (addRad) {
+			current_radiation_percept = new Literal("danger_" + radiation_status);
+			addPercept(current_radiation_percept);
+			System.out.println("Adding percept "+this.current_radiation_percept.toString());
 		}
 		Publisher radstatus = new Publisher("radiationStatus", "std_msgs/String", bridge);
-		radstatus.publish(new PrimitiveMsg<String>(status));
+		radstatus.publish(new PrimitiveMsg<String>(radiation_status));
 	}
 
 	@Override

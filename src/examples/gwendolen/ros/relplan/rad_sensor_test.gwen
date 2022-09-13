@@ -5,40 +5,49 @@ GWENDOLEN
 :Initial Beliefs:
 //locations
 location(door)
-location(bigtankfront)
-location(bigtankside)
-location(tank1top)
-location(tank1right)
-location(tank1bottom)
-location(tank2top)
-location(tank2left)
-location(tank2bottom)
+location(drumside)
+location(drumfront)
+location(t1top)
+location(t1right)
+location(t1bottom)
+location(t2top)
+location(t2left)
+location(t2bottom)
 location(tankset)
 location(pipes)
-location(dangerroom)
+location(room)
 location(stairs)
 location(entrance)
-location(dangerroomside)
-location(dangerroomsideend)
-
+location(roomwall)
+location(roomentrance)
+location(roomback)
+location(IP1)
+location(IP2)
+location(farwall)
+location(IP3)
 
 //coordinates
-location_coordinate(door,-8.18,-3.16,0.0)
-location_coordinate(bigtankfront,-4.07,-7.24,0.0)
-location_coordinate(bigtankside,-7.25,-5.26,0.0)
-location_coordinate(tank1top,-0.49,-3.51,0.0)
-location_coordinate(tank1right,2.30,-1.93,0.0)
-location_coordinate(tank1bottom,5.48,-3.48,0.0)
-location_coordinate(tank2top,-0.47,-6.52,0.0)
-location_coordinate(tank2left,1.98,-7.88,0.0)
-location_coordinate(tank2bottom,5.36,-6.31,0.0)
-location_coordinate(tankset,6.80,-5.69,0.0)
-location_coordinate(pipes,7.79,-2.67,0.0)
-location_coordinate(dangerroom,1.30,2.20,0.0)
-location_coordinate(stairs,2.94,8.56,0.0)
-location_coordinate(entrance,-7.83, -0.57, 0.0)
-location_coordinate(dangerroomside,-0.56, 0.3, 0.0)
-location_coordinate(dangerroomsideend,4.20, 0.34,0.0)
+location_coordinate(door,-8.180,-3.160,0.000)
+location_coordinate(drumside,-4.070,-7.240,0.000)
+location_coordinate(drumfront,-7.250,-5.260,0.000)
+location_coordinate(t1top,-0.490,-3.510,0.000)
+location_coordinate(t1right,2.300,-1.930,0.000)
+location_coordinate(t1bottom,5.480,-3.480,0.000)
+location_coordinate(t2top,-0.470,-6.520,0.000)
+location_coordinate(t2left,1.980,-7.880,0.000)
+location_coordinate(t2bottom,5.360,-6.310,0.000)
+location_coordinate(tankset,6.800,-5.690,0.000)
+location_coordinate(pipes,7.790,-2.670,0.000)
+location_coordinate(room,1.300,2.200,0.000)
+location_coordinate(stairs,2.940,8.560,0.000)
+location_coordinate(entrance,-7.825,-0.573,0.026)
+location_coordinate(roomwall,-0.557,0.516,0.001)
+location_coordinate(roomentrance,4.197,0.337,0.004)
+location_coordinate(roomback,4.948,4.055,0.000)
+location_coordinate(IP1,-2.198,-4.939,0.000)
+location_coordinate(IP2,-5.970,3.861,0.000)
+location_coordinate(farwall,7.746,3.835,0.000)
+location_coordinate(IP3,1.870,-0.516,0.000)
 
 //extras
 //just to count the locations
@@ -52,38 +61,23 @@ move_history([])
 //plans(Goal/destination, [
 //				plan(source, index, actions, annotations )...])
 
-plans(visit(pipes),[ 
-        plan(at(tank1right),1, [move_to(dangerroomsideend),move_to(pipes)], 
-        [visit(pipes), visit(dangerroomsideend), before(tank1right,pipes),avoid(tank2top)]),
-        plan(at(tank1right),2, [move_to(dangerroomside),move_to(entrance),
-        move_to(stairs),move_to(pipes)],
-        [visit(pipes),visit(dangerroomside),before(tank1right,pipes),avoid(tank2top)])
-           ])
-           
-plans(visit(tank1right), [
-		plan(at(door),1,[move_to(bigtankfront),move_to(tank1top),move_to(tank1right)],
-		[visit(tank1right),avoid(tank2top)]),
-		
-		plan(at(door),3,[move_to(entrance),move_to(stairs),move_to(pipes),move_to(tank1right)],[visit(tank1right),avoid(tank2top)]),
-		plan(at(door),2,[move_to(tank1top),move_to(tank1right)],[visit(tank1right),avoid(tank2top)])
+plans(visit(pipes), [
+		plan(at(door),1,[move_to(entrance),move_to(t1right),move_to(pipes)],
+		[visit(pipes),avoid(danger_orange)]
+		),
+		plan(at(door),2,[move_to(entrance),move_to(IP2),move_to(stairs),move_to(farwall),move_to(pipes)],
+		[visit(pipes),avoid(danger_orange)]
+		),
+		plan(at(door),3,[move_to(entrance),move_to(IP1),move_to(t2left)],
+		[visit(pipes),avoid(danger_orange)]
+		)
 		])
-    
-
-//plans(visit(tank1right), [
-//		plan(at(door),1,[move_to(bigtankfront),move_to(tank2top),move_to(tank1top),move_to(tank1right)],
-//			[visit(bigtankfront),visit(tank1right),before(bigtankfront,tank2top),before(tank1right,pipes)
-//			,avoid(tank2top)])
-//			,
-//		plan(at(door),2,[move_to(tank1top),move_to(tank1right)],
-//		[visit(tank1right),avoid(tank2top)])
-//		])
-
 
 //specifications
 //specification("Required",[visit(tank1right),visit(pipes)])
 //specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
-specification("Required",[visit(tank1right)])
-specification("Preferred",[avoid(tank2top)])
+specification("Required",[visit(pipes)])
+specification("Preferred",[avoid(danger_orange)])
 
 
 :Reasoning Rules:
@@ -307,7 +301,7 @@ updated_plans(PlanIndex,L,NewPlanAnnots,NewL):-
 
 :Initial Goals:
 
-//doAction(move_to(tank1top))[perform]
+//doAction(move_to(dangerroomback))[perform]
 findplan[perform]
 
 :Plans:
@@ -761,7 +755,7 @@ findplan[perform]
 								
 
 
-+danger_red:{True} <- print("Radiation zone you are going to die"); 
++danger_red:{True} <- print("Radiation zone you are dead"); 
 +danger_orange:{True} <- print("Radiation zone you might die");
 
 
