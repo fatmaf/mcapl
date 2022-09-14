@@ -44,6 +44,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	double at_epsilon_error = 0.5;
 	double near_error = 3;
 
+	boolean started_moving = false; 
 	HashMap<String, AbstractMap.SimpleEntry<Double, Double>> location_coordinates;
 	HashMap<String, Predicate> at_location_predicates;
 	HashMap<String, Predicate> near_location_predicates;
@@ -92,7 +93,17 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
 						Radiation msg = unpacker.unpackRosMessage(data);
-						radiation = msg.value;
+						 float old_rad = radiation;
+						radiation = (radiation+msg.value)/2;
+						if (started_moving)
+						{
+							receive_inspect();
+							String toprint = "";
+							if(currently_at!=null)
+								toprint+=currently_at.toString(); 
+							toprint+="/"+near_predlist_toString()+"\n"+old_rad+","+msg.value+" -> "+radiation;
+							System.out.println(toprint);
+						}
 					}
 				});
 
@@ -113,6 +124,17 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	}
 
+	String near_predlist_toString()
+	{
+		String toret = "";
+		if(currently_near!=null) {
+		for(Predicate p : currently_near)
+		{
+			toret +=p.toString()+",";
+		}
+		}
+		return toret; 
+	}
 	void doNear(Vector3 msg) {
 
 		if (dup_agentName != null) {
@@ -276,6 +298,8 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 			NumberTerm az = (NumberTerm) act.getTerm(5);
 			move(lx.solve(), ly.solve(), lz.solve(), ax.solve(), ay.solve(), az.solve());
 		} else if ((actionname.equals("move")) && nterms == 3) {
+			if (!started_moving)
+				started_moving = true; 
 			NumberTerm lx = (NumberTerm) act.getTerm(0);
 			NumberTerm ly = (NumberTerm) act.getTerm(1);
 			NumberTerm lz = (NumberTerm) act.getTerm(2);
@@ -400,17 +424,19 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	public void receive_inspect() {
 		String status = null;
-		System.out.println("Radiation: " + radiation);
-		if (radiation >= 250) {
+	//System.out.println("Radiation: " + radiation);
+		if (radiation >= 120) {
 			status = "red";
 			Literal rad = new Literal("danger_red");
 			addPercept(rad);
-		} else if (radiation >= 120) {
+		} else if (radiation >= 90) {
 			status = "orange";
 			Literal rad = new Literal("danger_orange");
 			addPercept(rad);
 		} else {
 			status = "green";
+			Literal rad = new Literal("danger_green"); 
+			addPercept(rad);
 		}
 		Publisher radstatus = new Publisher("radiationStatus", "std_msgs/String", bridge);
 		radstatus.publish(new PrimitiveMsg<String>(status));
