@@ -349,7 +349,16 @@ findplan[perform]
 											+!achieve_plan(Goal,Index)[achieve];	
 
 +!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
-											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other)}
+											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other), 
+											B avoid_specs_only(Other)}
+											<-
+											+!appendPrint("Original list ",CSpecs)[perform],
+											+!appendPrint("Satisfied ",SatSpecs)[perform],
+											+!appendPrint("Not satisfied but only avoid",Other)[perform];
+
++!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
+											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other), 
+											~B avoid_specs_only(Other)}
 											<-
 											+!appendPrint("Original list ",CSpecs)[perform],
 											+!appendPrint("Satisfied ",SatSpecs)[perform],
