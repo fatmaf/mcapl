@@ -3,15 +3,6 @@ GWENDOLEN
 // and we want to avoid areas of high radiation 
 // where high is 100 ish 
 
-
-//specification("Required",[visit(iP1),visit(t2bottom),visit(tankset),visit(pipes)])
-//specification("Preferred",[avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset)])
-
-
-
-
-
-
 :name: jackal
 
 :Initial Beliefs:
@@ -76,21 +67,21 @@ move_history([])
 //				plan(source, index, actions, annotations )...])
 
 plans(visit(iP1), [
-	plan(at(door), 1, [move_to(entrance), move_to(iP1)], [visit(iP1),avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset) ])
+	plan(at(door), 1, [move_to(entrance), move_to(iP1)], [visit(iP1),avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset) ])
 		])
 		
 plans(visit(t2bottom), [
-	plan(at(iP1), 1, [move_to(t2top),move_to(t2left),move_to(t2bottom)], [visit(t2bottom),avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset) ]),
-	plan(at(iP1), 2, [move_to(t1top), move_to(iP3), move_to(t1bottom), move_to(tankset),move_to(t2bottom)],
-[visit(t2bottom),avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes) ])
+	plan(at(iP1), 1, [move_to(t2top),move_to(t2bottom)], [visit(t2bottom),avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset) ]),
+	plan(at(iP1), 2, [move_to(t1top), move_to(iP3), move_to(t1bottom),move_to(t2bottom)],
+[visit(t2bottom),avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes) ])
  		])
 	
 plans(visit(tankset), [
-	plan(at(t2bottom),1,[move_to(tankset)],[visit(tankset),avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes)])
+	plan(at(t2bottom),1,[move_to(tankset)],[visit(tankset),avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes)])
 	])
 	
 plans(visit(pipes), [
-	plan(at(tankset),1,[move_to(pipes)], [visit(pipes),avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes)])
+	plan(at(tankset),1,[move_to(pipes)], [visit(pipes),avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes)])
 	])
 
 //plans()
@@ -99,7 +90,7 @@ plans(visit(pipes), [
 //specification("Required",[visit(tank1right),visit(pipes)])
 //specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
 specification("Required",[visit(iP1),visit(t2bottom),visit(tankset),visit(pipes)])
-specification("Preferred",[avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset)])
+specification("Preferred",[avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset)])
 
 
 :Reasoning Rules:

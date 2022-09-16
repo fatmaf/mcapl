@@ -3,15 +3,6 @@ GWENDOLEN
 // and we want to avoid areas of high radiation 
 // where high is 100 ish 
 
-
-//specification("Required",[visit(iP1),visit(t2bottom),visit(tankset),visit(pipes)])
-//specification("Preferred",[avoid(danger_red),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset)])
-
-
-
-
-
-
 :name: jackal
 
 :Initial Beliefs:
