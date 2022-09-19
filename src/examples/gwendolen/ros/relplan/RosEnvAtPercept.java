@@ -257,8 +257,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	boolean distanceFromLocBetween(double cx, double cy, double lx, double ly, double upperBound, double lowerBound) {
-		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
-		dist = Math.sqrt(dist);
+		double dist = getDistance(cx,cy,lx,ly);
 		if (dist < upperBound) {
 			if (dist >= lowerBound) {
 				return true;
@@ -269,16 +268,22 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	}
 
+
 	boolean epsilonFromLoc(double cx, double cy, double lx, double ly, double epsilon) {
-		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
-		dist = Math.sqrt(dist);
+		double dist = getDistance(cx,cy,lx,ly);
 		if (dist < epsilon)
 			return true;
 
 		return false;
 
 	}
-
+	double getDistance(double cx, double cy, double lx, double ly)
+	{
+		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
+		dist = Math.sqrt(dist);
+		dist = Math.abs(dist); 
+		return dist; 
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
