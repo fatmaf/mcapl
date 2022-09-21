@@ -44,8 +44,8 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	double at_epsilon_error = 0.5;
 	double near_error = 3;
 
-	String radiation_status = null;
-	Literal current_radiation_percept = null;
+
+	boolean started_moving = false; 
 	HashMap<String, AbstractMap.SimpleEntry<Double, Double>> location_coordinates;
 	HashMap<String, Predicate> at_location_predicates;
 	HashMap<String, Predicate> near_location_predicates;
@@ -94,9 +94,17 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
 						Radiation msg = unpacker.unpackRosMessage(data);
-						radiation = msg.value;
-						receive_inspect();
-						// System.out.println("Radiation: "+radiation);
+						 float old_rad = radiation;
+						radiation = (radiation+msg.value)/2;
+						if (started_moving)
+						{
+							receive_inspect();
+							String toprint = "";
+							if(currently_at!=null)
+								toprint+=currently_at.toString(); 
+							toprint+="/"+near_predlist_toString()+"\n"+old_rad+","+msg.value+" -> "+radiation;
+							System.out.println(toprint);
+						}
 					}
 				});
 
@@ -117,6 +125,17 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	}
 
+	String near_predlist_toString()
+	{
+		String toret = "";
+		if(currently_near!=null) {
+		for(Predicate p : currently_near)
+		{
+			toret +=p.toString()+",";
+		}
+		}
+		return toret; 
+	}
 	void doNear(Vector3 msg) {
 
 		if (dup_agentName != null) {
@@ -239,8 +258,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	}
 
 	boolean distanceFromLocBetween(double cx, double cy, double lx, double ly, double upperBound, double lowerBound) {
-		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
-		dist = Math.sqrt(dist);
+		double dist = getDistance(cx,cy,lx,ly);
 		if (dist < upperBound) {
 			if (dist >= lowerBound) {
 				return true;
@@ -251,16 +269,22 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	}
 
+
 	boolean epsilonFromLoc(double cx, double cy, double lx, double ly, double epsilon) {
-		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
-		dist = Math.sqrt(dist);
+		double dist = getDistance(cx,cy,lx,ly);
 		if (dist < epsilon)
 			return true;
 
 		return false;
 
 	}
-
+	double getDistance(double cx, double cy, double lx, double ly)
+	{
+		double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
+		dist = Math.sqrt(dist);
+		dist = Math.abs(dist); 
+		return dist; 
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -280,6 +304,8 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 			NumberTerm az = (NumberTerm) act.getTerm(5);
 			move(lx.solve(), ly.solve(), lz.solve(), ax.solve(), ay.solve(), az.solve());
 		} else if ((actionname.equals("move")) && nterms == 3) {
+			if (!started_moving)
+				started_moving = true; 
 			NumberTerm lx = (NumberTerm) act.getTerm(0);
 			NumberTerm ly = (NumberTerm) act.getTerm(1);
 			NumberTerm lz = (NumberTerm) act.getTerm(2);
@@ -402,75 +428,26 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 		cmd_vel.publish(new Twist(linear, angular));
 	}
 
+
 	public void receive_inspect() {
-		// String status = null;
-		//System.out.println("Radiation: " + radiation);
-		boolean addRad = false;
-		boolean removeRad = false;
-		if (radiation >= 100) {
-
-			if (radiation_status != null) {
-				if (!radiation_status.contentEquals("red")) {
-					radiation_status = "red";
-					// Literal rad = new Literal("danger_red");
-					// addPercept(rad);
-					addRad = true;
-					removeRad = true;
-				}
-			} else {
-				radiation_status = "red";
-				addRad = true;
-				removeRad = false;
-			}
-
-		} else if (radiation >= 50) {
-			if (radiation_status != null) {
-				if (!radiation_status.contentEquals("orange")) {
-					radiation_status = "orange";
-					// Literal rad = new Literal("danger_red");
-					// addPercept(rad);
-					addRad = true;
-					removeRad = true;
-				}
-			} else {
-				radiation_status = "orange";
-				addRad = true;
-				removeRad = false;
-			}
-
+		String status = null;
+	//System.out.println("Radiation: " + radiation);
+		if (radiation >= 120) {
+			status = "red";
+			Literal rad = new Literal("danger_red");
+			addPercept(rad);
+		} else if (radiation >= 90) {
+			status = "orange";
+			Literal rad = new Literal("danger_orange");
+			addPercept(rad);
 		} else {
-			if (radiation_status != null) {
-				if (!radiation_status.contentEquals("green")) {
-					radiation_status = "green";
-					// Literal rad = new Literal("danger_red");
-					// addPercept(rad);
-					addRad = true;
-					removeRad = true;
-				}
-			} else {
-				radiation_status = "green";
-				addRad = true;
-				removeRad = false;
-			}
-
-		}
-		// so if we have to add the status
-		// we do
-		// otherwise we dont
-		if (removeRad) {
-			removePercept(this.current_radiation_percept);
-			System.out.println("Removing percept "+this.current_radiation_percept.toString());
-
-		}
-		if (addRad) {
-			current_radiation_percept = new Literal("danger_" + radiation_status);
-			addPercept(current_radiation_percept);
-			System.out.println("Adding percept "+this.current_radiation_percept.toString());
+			status = "green";
+			Literal rad = new Literal("danger_green"); 
+			addPercept(rad);
 		}
 		Publisher radstatus = new Publisher("radiationStatus", "std_msgs/String", bridge);
-		radstatus.publish(new PrimitiveMsg<String>(radiation_status));
+		radstatus.publish(new PrimitiveMsg<String>(status));
 	}
-
 	@Override
 	public void init_after_adding_agents() {
 
