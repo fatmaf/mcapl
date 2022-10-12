@@ -62,23 +62,27 @@ location_count(0)
 //to record movement
 move_history([])
 
-//plans
-//plans(Goal/destination, [
-//				plan(source, index, actions, annotations )...])
 
-plans([
-	plan(visit(pipes),at(door),3,[move_to(entrance),move_to(t2top),move_to(t2bottom),move_to(pipes)],[visit(pipes),avoid(t2left)]),
-	plan(visit(pipes),at(door),1,[move_to(entrance),move_to(iP3),move_to(pipes)], [visit(pipes),avoid(t2left)]),
-	plan(visit(pipes),at(door),2,[move_to(entrance),move_to(iP2),move_to(stairs),move_to(farwall),move_to(pipes)],[visit(pipes),avoid(t2left)])
+//plans
+//plans([
+//				plan(goal, source, index, actions, annotations )...])
+
+plans( [
+	plan(visit(iP1),at(door), 1, [move_to(entrance), move_to(iP1)], [visit(iP1),avoid(t2left) ]),	
+	plan(visit(t2bottom), at(iP1), 1, [move_to(t2top),move_to(t2bottom)], [visit(t2bottom),avoid(t2left) ]),
+	plan(visit(t2bottom), at(iP1), 2, [move_to(t1top), move_to(iP3), move_to(tankset),move_to(t2bottom)],
+[visit(t2bottom),avoid(t2left) ]),
+	plan(visit(tankset), at(t2bottom),1,[move_to(tankset)],[visit(tankset),avoid(t2left)]),
+	plan(visit(pipes),at(tankset),1,[move_to(pipes)], [visit(pipes),avoid(t2left)])
 	])
 
-//plans()
+
 
 //specifications
 //specification("Required",[visit(tank1right),visit(pipes)])
 //specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
-specification("Required",[visit(pipes)])
-specification("Preferred",[avoid(t2left)])
+specification("Required",[visit(iP1),visit(pipes),visit(t2bottom),visit(tankset)])
+specification("Preferred",[avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset)])
 
 
 :Reasoning Rules:
@@ -616,7 +620,7 @@ findplan[perform]
 						~B moving_back,
 						B cancelled_goal} 
 					<- 
-					
+					print("stopping plan not moving have current plan and have cancelled goal"),
 					+moving_back,
 					+stop_plan,
 					print("Stopping plan not moving"),
@@ -629,7 +633,7 @@ findplan[perform]
 						~B moving_back,
 						~B cancelled_goal} 
 					<- 
-					
+					print("stopping plan not moving have current plan and not cancelled goal"),
 					+moving_back,
 					+stop_plan,
 					print("Stopping plan not moving"),
@@ -642,7 +646,7 @@ findplan[perform]
 						~B moving,
 						~B cancelled_goal} 
 					<- 
-				
+				print("stopping plan not moving not current plan and not cancelled goal"),
 					+moving_back,
 					+stop_plan,
 					print("Stopping plan not moving"),
@@ -653,12 +657,14 @@ findplan[perform]
 					   ~B moving_back,
 					   ~B cancelled_goal} 
 					<- 
+					print("stopping plan  moving have current plan and not cancelled goal"),
 					+!stop_moving_now[perform];
 					
 +!stop_plan[achieve]: { B moving_back,
 						B moving} 
 					<- 
 				//	+!stop_moving_now;
+				print("stopping plan  moving back"),
 					do_nothing;
 				//	+!stop_moving[perform],
 				//	print("Stopping plan"),
@@ -669,7 +675,7 @@ findplan[perform]
 //-!achieve_plan(Goal,Index)[achieve]: {True} <- -current_plan(Goal,Index),
 //												print("Plan stopped");		
 
-+!achieve_plan(Goal,Index)[achieve]: {B moving} <- do_nothing;																			
++!achieve_plan(Goal,Index)[achieve]: {B moving} <- print("moving"),do_nothing;																			
 +!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
 									B plan_exists(Goal,Source,Index,Actions,Annots),
 									~B moving,
@@ -908,7 +914,20 @@ findplan[perform]
 						+!appendPrint("Current plan goal",Goal)[perform],
 						+!appendPrint("Current plan index", PlanIndex)[perform],
 						+!update_annotations(Goal,PlanIndex,VSpecs)[perform];
+
++!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications(Loc,OrigSpec,VSpecs),
+									 ~B current_plan(Goal,PlanIndex,PActions)}
+						<-
+						print("violated specs doing nothing");
 						
++!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
+									 ~B current_plan(Goal,PlanIndex,PActions)}
+						<-
+						print("violated specs doing nothing but no current plan either");	
++!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications(Loc,OrigSpec,VSpecs),
+									 B current_plan(Goal,PlanIndex,PActions)}
+						<-
+						print("violated specs doing nothing cuz no violated specs");					
 
 +!update_annotations(Goal,PlanIndex,[])[perform]: {True} <-
 						print("no violations so far");

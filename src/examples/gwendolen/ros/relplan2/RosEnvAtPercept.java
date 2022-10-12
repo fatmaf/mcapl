@@ -103,7 +103,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 							if(currently_at!=null)
 								toprint+=currently_at.toString(); 
 							toprint+="/"+near_predlist_toString()+"\n"+old_rad+","+msg.value+" -> "+radiation;
-							System.out.println(toprint);
+						//	System.out.println(toprint);
 						}
 					}
 				});
