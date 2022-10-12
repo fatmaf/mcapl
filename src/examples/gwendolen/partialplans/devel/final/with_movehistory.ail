@@ -24,7 +24,7 @@
 mas.file = /src/examples/gwendolen/partialplans/parts_dev/with_movehistory.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
-env = gwendolen.partialplans.MoveEnvWithNear
+env = examples.gwendolen.partialplans.devel.MoveEnvWithNear
 
 log.info = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent
