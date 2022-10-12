@@ -254,11 +254,11 @@ pspec_modified(NewRPlanSpec,WeakeningSpec):-
 //helper stuff for plans 
 get_plans_for_spec(S,[],[]);
 
-get_plans_for_spec(S, [plan(X,Ind,Actions,HP) | TP], [plan(X,Ind,Actions,HP) | Res]) :-
+get_plans_for_spec(S, [plan(G,X,Ind,Actions,HP) | TP], [plan(G,X,Ind,Actions,HP) | Res]) :-
 	ismember(S,HP),
 	get_plans_for_spec(S,TP,Res);  
 	
-get_plans_for_spec(S,[plan(X,Ind,Actions,HP) | TP], Res) :-
+get_plans_for_spec(S,[plan(G,X,Ind,Actions,HP) | TP], Res) :-
 	get_plans_for_spec(S,TP,Res);
 
 //getting plans without weakening 	
@@ -276,7 +276,8 @@ check_plans_for_spec(L,NL,NL);
 //create_specifications_for_plan(Goal,NotGoalsList,Preferred,GoalsList,SpecsForPlan):-
 get_plans_for_speclist_weakening_wrapper(NotGoalsList,Preferred,Plans,PossiblePlans):-
     append(NotGoalsList,Preferred,SpecsForPlans),
-    get_plans_for_speclist_weakening(SpecsForPlans,Plans,PossiblePlans);
+   get_plans_for_speclist_weakening(SpecsForPlans,Plans,PossiblePlans);
+
     
 //getting plans with weakening 
 get_plans_for_speclist_weakening([],Plans,Plans);	
@@ -289,14 +290,14 @@ get_plans_for_speclist_weakening([H|T],Plans,PossiblePlans):-
 
 //finding a plan 
 plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,
-			PlanAnnots,[plan(CurrentLoc,PlanIndex,PlanActions,PlanAnnots) | T]);
+			PlanAnnots,[plan(Goal,CurrentLoc,PlanIndex,PlanActions,PlanAnnots) | T]);
 
 
 plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,PlanAnnots,[H | T]):-
 	plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,PlanAnnots,T);
 	
 plan_exists(Goal,Source,PlanIndex,PlanActions,PlanAnnots):-
-	plans(Goal,L),
+	plans(L),
 	plan_exists(Source,Goal,PlanIndex,PlanActions,PlanAnnots,L);
 
 
@@ -306,7 +307,7 @@ check_length(L,Len):-
 //updating plans 
 //
 updated_plans(PlanIndex,L,NewPlanAnnots,NewL):-
-	replaceFirst(plan(Source,PlanIndex,PlanActions,PlanAnnots),plan(Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
+	replaceFirst(plan(Goal,Source,PlanIndex,PlanActions,PlanAnnots),plan(Goal,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
 	
 
 //% a function that returns all plans with the same destination
@@ -442,7 +443,8 @@ findplan[perform]
 
 +!get_plans[perform]: {~B at(Loc)} <- //try and get some at 
 									// so this will be a trigger to a function that can add an at for us
-									print("I cant do anything because I dont know where I am");
+									print("I cant do anything because I dont know where I am so I will try again"),
+									+!get_plans[perform];
 									
 +!get_plans[perform]: {B at(Loc)} <- +!get_plans_from(Loc)[perform];
 +!get_plans_from(Loc)[perform] : {B location(Loc),
@@ -478,10 +480,18 @@ findplan[perform]
 //                                                                               print(CSpecs)
 
                                       ,
+                                      +!belief_check[perform],
                                       +!find_valid_plans(NewPlans)[perform]
                                       ;
+                                      
++!belief_check[perform] : {B specification("Preferred",PSpecs),
+							B nongoalslist(Ng)
+							} <- 
+							print("I believe that "), print("specification preferred exists"), print(PSpecs),
+							print("Non goals list exists"), print(Ng);
 +!find_valid_plans(NewPlans)[perform] : {B specification("Preferred",PSpecs),
                                         B nongoalslist(Ng),
+                                    //    B get_plans_for_spec([avoid(danger_orange)],NewPlans,ChosenPlans)
                                         B get_plans_for_speclist_weakening_wrapper(Ng,PSpecs,NewPlans,ChosenPlans)
                                         }  <-
                                         print("Combined specs"),
@@ -489,7 +499,8 @@ findplan[perform]
                                         print(PSpecs)
                                         ,
                                         print("ChosenPlans"),
-                                        print(ChosenPlans)
+                                        print(ChosenPlans),
+                                        +!select_first_plan(ChosenPlans)[perform]
                                         ;
 
 
@@ -528,7 +539,17 @@ findplan[perform]
 											done;				
 											
 																		
-+!select_first_plan(Goal,[plan(Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
++!select_first_plan(Goal,[plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
+											print("Got plan"),
+											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
+											+!achieve_plan(Goal,Index)[achieve];	
++!select_first_plan([]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
+											print("Or something strange happened"),
+											+!get_satisfied_otherwise_specs[perform],
+											done;				
+											
+																		
++!select_first_plan([plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
 											+!achieve_plan(Goal,Index)[achieve];	
@@ -902,16 +923,16 @@ findplan[perform]
 						
 						-.lock;
 						
-+!update_plans(Goal,PlanIndex,NewPlanAnnots)[perform]: { B plans(Goal,L),
++!update_plans(Goal,PlanIndex,NewPlanAnnots)[perform]: { B plans(L),
 							B updated_plans(PlanIndex,L,NewPlanAnnots,NewL)}
 							<-
 							+.lock,
 							//drop the old plans belief 
-							-plans(Goal,L), 
+							-plans(L), 
 							print("Dropped old plans"),
 							print(L),
 							//add in the new one 
-							+plans(Goal,NewL),
+							+plans(NewL),
 							print("Added new ones"),
 							print(NewL),
 							-.lock
