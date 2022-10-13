@@ -262,7 +262,7 @@ check_length(L,Len):-
 	
 //updating plans 
 //
-updated_plans(PlanIndex,L,NewPlanAnnots,NewL):-
+updated_plans(G,Source,PlanIndex,L,NewPlanAnnots,NewL):-
 	replaceFirst(plan(G,Source,PlanIndex,PlanActions,PlanAnnots),plan(G,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
 
 
@@ -369,6 +369,14 @@ create_specifications_for_plan(Goal,NotGoalsList,Preferred,GoalsList,SpecsForPla
     append(TempList,Preferred,TempList2),
     append(TempList2,MinusGoalsList,SpecsForPlan);
 	
+
+//listing satisfied and unsatisfied specs 
+break_specs_satisfied_otherwise([],[],[]);
+break_specs_satisfied_otherwise([OrigSpecsH | OrigSpecsT], [OrigSpecsH | OtherSatSpecs], Otherwise):-
+	satisfied(OrigSpecsH),
+	break_specs_satisfied_otherwise(OrigSpecsT,OtherSatSpecs,Otherwise);
+break_specs_satisfied_otherwise([OrigSpecsH | OrigSpecsT],  OtherSatSpecs, [OrigSpecsH | Otherwise]):-
+	break_specs_satisfied_otherwise(OrigSpecsT,OtherSatSpecs,Otherwise);
 			
 :Initial Goals:
 
@@ -423,6 +431,8 @@ findplan[perform]
 +!check_before_annots([],BSpecs)[perform] : { True
                                         }
                                       <-
+                                        print("All done"),
+                                      +!get_satisfied_otherwise_specs[perform],
                                      print("All done")
                                       ;
 +!check_before_annots(LocPlans,BSpecs)[perform] : { B annotate_plans_with_befores(LocPlans,BSpecs,NewPlans)
@@ -431,7 +441,7 @@ findplan[perform]
                                       <-
                                       print("Checking annots"),
                                       print(LocPlans),
-                                      print("Updated annots"),
+                                      print("Updated annots with befores"),
                                       print(NewPlans)
 //                                      , print("Combined specs"),
 //                                                                               print(CSpecs)
@@ -480,11 +490,28 @@ findplan[perform]
 											+!select_first_plan(Goal,WeakenedPlans)[perform];
 
 +!select_first_plan([]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
-											print("Or something strange happened");											
+											print("Or something strange happened"),
+											+!get_satisfied_otherwise_specs[perform];											
 +!select_first_plan([plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
 											+!achieve_plan(Goal,Index)[achieve];	
+
++!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
+											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other), 
+											B avoid_specs_only(Other)}
+											<-
+											+!appendPrint("Original list ",CSpecs)[perform],
+											+!appendPrint("Satisfied ",SatSpecs)[perform],
+											+!appendPrint("Not satisfied but only avoid",Other)[perform];
+
++!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
+											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other), 
+											~B avoid_specs_only(Other)}
+											<-
+											+!appendPrint("Original list ",CSpecs)[perform],
+											+!appendPrint("Satisfied ",SatSpecs)[perform],
+											+!appendPrint("Not satisfied ",Other)[perform];
 														
 +!update_specs[perform]: {True} 
 					<- 
@@ -715,13 +742,14 @@ findplan[perform]
 						+!appendPrint("Violated list ",ViolatedSpecs)[perform],
 						+!appendPrint("Old annotations ",PlanAnnots)[perform],
 						+!appendPrint("Updated annots ",NewPlanAnnots)[perform],
-						+!update_plans(Goal,PlanIndex,NewPlanAnnots)[perform],
+						+!update_plans(Goal,Source,PlanIndex,NewPlanAnnots)[perform],
 						-.lock;
 						
-+!update_plans(Goal,PlanIndex,NewPlanAnnots)[perform]: { B plans(L),
-							B updated_plans(PlanIndex,L,NewPlanAnnots,NewL)}
++!update_plans(Goal,Source,PlanIndex,NewPlanAnnots)[perform]: { B plans(L),
+							B updated_plans(Goal,Source,PlanIndex,L,NewPlanAnnots,NewL)}
 							<-
 							+.lock,
+							+!appendPrint("updating the plan with index ",PlanIndex)[perform],
 							//drop the old plans belief 
 							-plans(L), 
 							print("Dropped old plans"),
