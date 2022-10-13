@@ -331,23 +331,18 @@ updated_plans(PlanIndex,L,NewPlanAnnots,NewL):-
                                   get_plans_for_goal(Goal,T,PlanSet);
 
 dif(X,Y):- ~[X == Y];
-//dif(Loc1,Loc2);
+
 
 check_before([],before(Loc1,Loc2));
 check_before([move_to(Loc1)|T],before(Loc1,Loc2)):- dif(Loc1,Loc2);
-//            check_before_after(T,before(Loc1,Loc2));
+
 check_before([move_to(Loc2)|T],before(Loc1,Loc2)):- dif(Loc1,Loc2),false;
 check_before([move_to(Loc)|T],before(Loc1,Loc2)):-
             dif(Loc,Loc2),
             dif(Loc,Loc1),
             check_before(T,before(Loc1,Loc2));
 
-//check_before_after([],before(Loc1,Loc2));
-//check_before_after([move_to(Loc2)|T],before(Loc1,Loc2));
-//check_before_after([move_to(Loc)|T],before(Loc1,Loc2)):-
-//            dif(Loc,Loc2),
-//            dif(Loc,Loc1),
-//            check_before_after(T,before(Loc1,Loc2));
+
 
 //%so now we want to annotate a plan
 //%given a plan P we go over it to check before
@@ -480,8 +475,6 @@ findplan[perform]
                                       print(LocPlans),
                                       print("Updated annots"),
                                       print(NewPlans)
-//                                      , print("Combined specs"),
-//                                                                               print(CSpecs)
 
                                       ,
                                       +!belief_check[perform],
@@ -594,16 +587,6 @@ findplan[perform]
 						-updated_specifications(Type,SpecList),
 						+updated_specifications(Type,FiltSpecList)
 						;
-						
-//+!stop_plan(tank1top)[perform]: {True} 
-//					<- 
-//					print("Stopping plan"),
-//					//-!achieve_plan(Goal,Index)[achieve];
-//					+!stop_plan[achieve];
-					
-					
-//+!stop_plan(Loc)[perform]: {True} 
-//					<- print("Not stopping the plan");
 
 					
 +!stop_moving_now[perform]: {B moving} <-
@@ -663,19 +646,13 @@ findplan[perform]
 +!stop_plan[achieve]: { B moving_back,
 						B moving} 
 					<- 
-				//	+!stop_moving_now;
 				print("stopping plan  moving back"),
 					do_nothing;
-				//	+!stop_moving[perform],
-				//	print("Stopping plan"),
-				//	-!achieve_plan(Goal,Index)[achieve],
-				//	-current_plan(Goal,Index,PA),
-				//	+!move_back[achieve];
-					
-//-!achieve_plan(Goal,Index)[achieve]: {True} <- -current_plan(Goal,Index),
-//												print("Plan stopped");		
 
-+!achieve_plan(Goal,Index)[achieve]: {B moving} <- print("moving"),do_nothing;																			
+					
+	
+
++!achieve_plan(Goal,Index)[achieve]: {B moving} <-do_nothing;																			
 +!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
 									B plan_exists(Goal,Source,Index,Actions,Annots),
 									~B moving,
@@ -715,8 +692,7 @@ findplan[perform]
 					  ~B move_back_list(MBL),
 					  ~B moving} 
 					  <-
-					  
-					//  +!stop_moving[perform],
+
 						print("Moving back"),
 					  +move_back_list([FAct|TActs]),
 					  +!doMoveBackActions[perform];
@@ -779,7 +755,6 @@ findplan[perform]
 							<-
 							-going(Loc),
 							print("done move"),
-						//	+doAction(move_to(Loc)),
 							-moving;
 
 +!reset_move_history[perform]: {B move_history(MH)} <- -move_history(MH),+move_history([]);														
@@ -836,7 +811,10 @@ findplan[perform]
 						+!appendPrint("moving to ",Loc)[perform],
 						+!appendPrint("movebase id ",Id)[perform],
 						print("The goal received a cancel request");
-						
+					//+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,[]),
+//									 B current_plan(Goal,PlanIndex,PActions)}
+//						<-
+//						print("no violations so far");	
 +movebase_result(Id,7) : { B moving, B going(Loc) } <- 
 						+!appendPrint("moving to ",Loc)[perform],
 						+!appendPrint("movebase id ",Id)[perform],
@@ -847,14 +825,8 @@ findplan[perform]
 						+!appendPrint("movebase id ",Id)[perform],
 						print("The goal has been recalled so just clean up"),
 						+!move_cleanup[perform];											
-//+movebase_result(Id,MBRes) : { B moving, B going(Loc) } <- 
-//						 
-//						print("Unable to get to location "),
-//						print(Loc),
-//						print(" error code "),
-//						print(MBRes),
-//						print(" but will just assume we got there"),
-//						+!move_cleanup[perform];
+
+
 
 +!move_cleanup[perform]: {B moving, B going(Loc), B cancelled_goal_not_done } <-
 						+.lock,
@@ -869,11 +841,11 @@ findplan[perform]
 						+!visitedLoc(Loc)[perform],
 						+!doneMove(Loc)[perform],
 						-.lock;
-					//	+!stop_plan(Loc)[perform];	
+
 
 +!move_cleanup[perform]: {~B moving, ~B going(Loc) } <- print("move clean up called for no reason");
 																	
-//+movebase_result(Id,MBRes) : {True} <- +!appendPrint("Move base result id ",MBRes)[perform];
+
 															
 +at(Loc): {True} <- 
 			+.lock,
@@ -892,8 +864,7 @@ findplan[perform]
 						<-
 						print("already visited this place");
 						
-//+near(Loc): {True} <- +.lock, +!appendPrint("near ",Loc)[perform], -.lock;
-//
+
 +near(Loc): {B combined_specifications(CSpecs) } <- 
 					+.lock,
 					+!appendPrint("Original Specs ",CSpecs)[perform],
@@ -902,10 +873,7 @@ findplan[perform]
 					-.lock;						
 
 
-//+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,[]),
-//									 B current_plan(Goal,PlanIndex,PActions)}
-//						<-
-//						print("no violations so far");
+
 						
 +!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
 									 B current_plan(Goal,PlanIndex,PActions)}

@@ -21,10 +21,10 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/partialplans/devel/finalv/part_together.gwen
+mas.file = /src/examples/gwendolen/partialplans/checkalg/part_together.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
-env = gwendolen.partialplans.devel.finalv.MoveEnvWithNear_l5
+env = gwendolen.partialplans.checkalg.MoveEnvWithNear_l6
 
 log.info = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent

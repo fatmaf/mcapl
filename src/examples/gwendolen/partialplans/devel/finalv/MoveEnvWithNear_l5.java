@@ -1,4 +1,4 @@
-package gwendolen.partialplans.parts_dev;
+package gwendolen.partialplans.devel.finalv;
 
 import ail.mas.DefaultEnvironment;
 import ail.syntax.Action;

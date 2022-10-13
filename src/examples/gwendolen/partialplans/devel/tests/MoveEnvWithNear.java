@@ -1,5 +1,4 @@
-package gwendolen.partialplans.tests;
-
+package gwendolen.partialplans.devel.tests;
 import ail.mas.DefaultEnvironment;
 import ail.syntax.Action;
 import ail.syntax.Predicate;

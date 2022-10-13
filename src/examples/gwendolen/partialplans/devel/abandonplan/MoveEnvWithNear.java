@@ -1,4 +1,4 @@
-package gwendolen.partialplans.abandonplan;
+package gwendolen.partialplans.devel.abandonplan;
 
 import ail.mas.DefaultEnvironment;
 import ail.syntax.Action;

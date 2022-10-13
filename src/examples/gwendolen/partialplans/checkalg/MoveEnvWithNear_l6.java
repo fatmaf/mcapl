@@ -1,4 +1,4 @@
-package gwendolen.partialplans.devel.abandonplan;
+package gwendolen.partialplans.checkalg;
 
 import ail.mas.DefaultEnvironment;
 import ail.syntax.Action;
@@ -6,9 +6,9 @@ import ail.syntax.Predicate;
 import ail.syntax.Unifier;
 import ail.util.AILexception;
 
-public class MoveEnvWithNear_l5 extends DefaultEnvironment {
+public class MoveEnvWithNear_l6 extends DefaultEnvironment {
 
-	String prevloc = "l1";
+	String prevloc = "l0";
 	boolean fm = true;
 
 	@Override
@@ -17,7 +17,8 @@ public class MoveEnvWithNear_l5 extends DefaultEnvironment {
 		if (fm) {
 			Predicate oldloc = new Predicate("at");
 			oldloc.addTerm(new Predicate(prevloc));
-			addPercept("agent", oldloc);
+			//addPercept("agent", oldloc);
+			addPercept(oldloc);
 			fm = false;
 		}
 	}
@@ -32,24 +33,24 @@ public class MoveEnvWithNear_l5 extends DefaultEnvironment {
 			Predicate oldloc = new Predicate("at");
 			oldloc.addTerm(new Predicate(prevloc));
 
-			removePercept(agName, oldloc);
+			removePercept(oldloc);
 
-			addPercept(agName, newloc);
+			addPercept( newloc);
 			System.out.println("Removed at " + oldloc.toString());
 			System.out.println("Added at " + newloc.toString());
 			prevloc = moveloc;
 
 			Predicate nearloc = new Predicate("near");
-			nearloc.addTerm(new Predicate("l5"));
+			nearloc.addTerm(new Predicate("l6"));
 			// adding the near percept
 			// when we get to l4 we realise that we are "near l6"
 			if (moveloc.equalsIgnoreCase("l4")) {
-				addPercept(agName, nearloc);
+				addPercept( nearloc);
 
 			} else {
 				// it might be there already and we might have to remove it
 				// putting this in move because that is what decides it
-				removePercept(agName, nearloc);
+				removePercept( nearloc);
 			}
 
 		}
