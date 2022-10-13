@@ -59,11 +59,17 @@ remove_list_from_list([ToRemoveH | ToRemoveT ],L,NL):-
 	remove_list_from_list(ToRemoveT,NL1,NL); 
 
 
-replaceFirst(_,_, [],[]);
-replaceFirst(O,R,[O|T],[R|T]);
-replaceFirst(O,R,[H|T],[H|T2]) :- 
-			dif(H,O),
-			replaceFirst(O,R,T,T2);
+//replaceFirst(_,_, [],[]);
+//replaceFirst(O,R,[O|T],[R|T]);
+//replaceFirst(O,R,[H|T],[H|T2]) :-
+//			dif(H,O),
+//			replaceFirst(O,R,T,T2);
+
+replaceFirstPlanAnnots(_,_,[],[]);
+replaceFirstPlanAnnots(plan(Goal,Source,Index,Actions,Annots),plan(Goal,Source,Index,Actions,NewAnnots),[plan(Goal,Source,Index,Actions,Annots) | T],[plan(Goal,Source,Index,Actions,NewAnnots)|T]);
+replaceFirstPlanAnnots(plan(Goal,Source,Index,Actions,Annots),plan(Goal,Source,Index,Actions,NewAnnots),[H | T],[H|T2]):-
+    replaceFirstPlanAnnots(plan(Goal,Source,Index,Actions,Annots),plan(Goal,Source,Index,Actions,NewAnnots),T,T2);
+
 
 //combining the required and preferred specs
 combined_specifications(CSpecs):-
@@ -263,7 +269,7 @@ check_length(L,Len):-
 //updating plans 
 //
 updated_plans(G,Source,PlanIndex,L,NewPlanAnnots,NewL):-
-	replaceFirst(plan(G,Source,PlanIndex,PlanActions,PlanAnnots),plan(G,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
+	replaceFirstPlanAnnots(plan(G,Source,PlanIndex,PlanActions,PlanAnnots),plan(G,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
 
 
   plan_exists_from(Loc,[],[]);
@@ -380,10 +386,26 @@ break_specs_satisfied_otherwise([OrigSpecsH | OrigSpecsT],  OtherSatSpecs, [Orig
 			
 :Initial Goals:
 
+//
 findplan[perform]
-
+//test_rr_replaceFirst[perform]
 :Plans:
 
+//test reasoning rules here
+
+//replaceFirst(plan(G,Source,PlanIndex,PlanActions,PlanAnnots),plan(G,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
++!test_rr_replaceFirst[perform]: {
+                    B plans(OldList)
+                    ,
+                    B replaceFirstPlanAnnots(plan(visit(l5),at(l3),1,PA,Annots)
+                    ,plan(visit(l5),at(l3),1,PA,[visit(l5)]),OldList,Nl)
+                                    } <-
+                                    print("Testing reasoning rule"), print("replace first"),
+                                    print(OldList),
+                                print("Output ")
+                                ,
+                                print(Nl)
+                                ;
 +!set_up_initial_beliefs[perform]: {B goalslist(G), B nongoalslist(Ng)
                                     } <-
                                     print("Goals list"),
@@ -541,7 +563,7 @@ findplan[perform]
 					
 +!stop_plan(Loc)[perform]: {B current_plan(Goal,Index,PA)} 
 					<- print("Not stopping the plan");
-					
++!stop_moving[perform]: {~B moving} <- print("They said I was moving but I was not");
 +!stop_moving[perform]: {B moving} <-
 						print("Stop moving"),
 						-moving;
