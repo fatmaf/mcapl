@@ -112,6 +112,12 @@ replaceFirst(O,R,[O|T],[R|T]);
 replaceFirst(O,R,[H|T],[H|T2]) :- 
 			dif(H,O),
 			replaceFirst(O,R,T,T2);
+			
+replaceFirstPlanAnnots(_,_,[],[]);
+replaceFirstPlanAnnots(plan(Goal,Source,Index,Actions,Annots),plan(Goal,Source,Index,Actions,NewAnnots),[plan(Goal,Source,Index,Actions,Annots) | T],[plan(Goal,Source,Index,Actions,NewAnnots)|T]);
+replaceFirstPlanAnnots(plan(Goal,Source,Index,Actions,Annots),plan(Goal,Source,Index,Actions,NewAnnots),[H | T],[H|T2]):-
+    replaceFirstPlanAnnots(plan(Goal,Source,Index,Actions,Annots),plan(Goal,Source,Index,Actions,NewAnnots),T,T2);
+
 
 //combining the required and preferred specs
 combined_specifications(CSpecs):-
@@ -310,8 +316,8 @@ check_length(L,Len):-
 	
 //updating plans 
 //
-updated_plans(PlanIndex,L,NewPlanAnnots,NewL):-
-	replaceFirst(plan(Goal,Source,PlanIndex,PlanActions,PlanAnnots),plan(Goal,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
+updated_plans(Goal,Source,PlanIndex,L,NewPlanAnnots,NewL):-
+	replaceFirstPlanAnnots(plan(Goal,Source,PlanIndex,PlanActions,PlanAnnots),plan(Goal,Source,PlanIndex,PlanActions,NewPlanAnnots),L,NewL);
 	
 
 //% a function that returns all plans with the same destination
@@ -471,9 +477,9 @@ findplan[perform]
 ,B combined_specifications(CSpecs)
                                         }
                                       <-
-                                      print("Checking annots"),
+                                      print("Checking annots befores list"),
                                       print(LocPlans),
-                                      print("Updated annots"),
+                                      print("Updated annots befores list"),
                                       print(NewPlans)
 
                                       ,
@@ -539,7 +545,7 @@ findplan[perform]
 +!select_first_plan(Goal,[plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
-											+!achieve_plan(Goal,Index)[achieve];	
+											+!achieve_plan(Goal,Source,Index)[achieve];	
 +!select_first_plan([]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
 											print("Or something strange happened"),
 											+!get_satisfied_otherwise_specs[perform],
@@ -549,7 +555,7 @@ findplan[perform]
 +!select_first_plan([plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
-											+!achieve_plan(Goal,Index)[achieve];	
+											+!achieve_plan(Goal,Source,Index)[achieve];	
 
 +!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
 											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other), 
@@ -597,21 +603,36 @@ findplan[perform]
 						print("Sent goal cancel request"),
 						-.lock;
 
--!stop_plan[achieve]: {True} <- print("dropping stop plan"), debug;
-+!stop_plan[achieve]: {B current_plan(Goal,Index,PA),
+-!stop_plan[achieve]: {True} <- +!print_beliefs[perform], print("dropping stop plan"), debug;
+
+
++!print_beliefs[perform] : {True} <- +.lock, +!has_belief_current_plan[perform],
++!has_belief_moving[perform], +!has_belief_moving_back[perform], +!has_belief_cancelled_goal[perform],-.lock;
++!has_belief_current_plan[perform] : {B current_plan(G,S,I,P)} <- print("I believe there is a plan with"), print(G),
+print(S),print(I), print(P); 
++!has_belief_moving[perform]:{B moving} <- print("I am moving"); 
++!has_belief_moving_back[perform]:{B moving_back} <- print("I am moving back"); 
++!has_belief_cancelled_goal[perform]: {B cancelled_goal} <- print("I cancelled a goal"); 
++!has_belief_current_plan[perform] : {~B current_plan(G,S,I,P)} <- print("I do NOT believe there is a plan with");
++!has_belief_moving[perform]:{~B moving} <- print("I am NOT moving"); 
++!has_belief_moving_back[perform]:{~B moving_back} <- print("I am NOT moving back"); 
++!has_belief_cancelled_goal[perform]: {~B cancelled_goal} <- print("I NOT cancelled a goal"); 
+
++!stop_plan[achieve]: {B current_plan(Goal,Source,Index,PA),
 						~B moving,
 						~B moving_back,
-						B cancelled_goal} 
+						B cancelled_goal,
+						~B cancelled_goal_not_done} 
 					<- 
 					print("stopping plan not moving have current plan and have cancelled goal"),
 					+moving_back,
 					+stop_plan,
 					print("Stopping plan not moving"),
-					-!achieve_plan(Goal,Index)[achieve],
-					-current_plan(Goal,Index,PA),
+					-!achieve_plan(Goal,Source,Index)[achieve],
+					-current_plan(Goal,Source,Index,PA),
 					+!move_back[achieve];
 						
-+!stop_plan[achieve]: {B current_plan(Goal,Index,PA),
++!stop_plan[achieve]: {B current_plan(Goal,Source,Index,PA),
 						~B moving,
 						~B moving_back,
 						~B cancelled_goal} 
@@ -620,11 +641,11 @@ findplan[perform]
 					+moving_back,
 					+stop_plan,
 					print("Stopping plan not moving"),
-					-!achieve_plan(Goal,Index)[achieve],
-					-current_plan(Goal,Index,PA),
+					-!achieve_plan(Goal,Source,Index)[achieve],
+					-current_plan(Goal,Source,Index,PA),
 					+!move_back[achieve];
 					
-+!stop_plan[achieve]: { ~B current_plan(Goal,Index,PA),
++!stop_plan[achieve]: { ~B current_plan(Goal,Source,Index,PA),
 						~B moving_back,
 						~B moving,
 						~B cancelled_goal} 
@@ -635,13 +656,34 @@ findplan[perform]
 					print("Stopping plan not moving"),
 					+!move_back[achieve];
 											
-+!stop_plan[achieve]: { B current_plan(Goal,Index,PA),
++!stop_plan[achieve]: { B current_plan(Goal,Source,Index,PA),
 						B moving,
 					   ~B moving_back,
 					   ~B cancelled_goal} 
 					<- 
 					print("stopping plan  moving have current plan and not cancelled goal"),
 					+!stop_moving_now[perform];
+
++!stop_plan[achieve]: { B current_plan(Goal,Source,Index,PA),
+						B moving,
+					   ~B moving_back,
+					   B cancelled_goal,
+					   B cancelled_goal_not_done} 
+					<- 
+					print("stopping plan moving have current plan and  cancelled goal"),
+					do_noting;
+					
++!stop_plan[achieve]: { B current_plan(Goal,Source,Index,PA),
+						B moving,
+					   ~B moving_back,
+					   B cancelled_goal,
+					   ~B cancelled_goal_not_done} 
+					<- 
+					print("stopping plan moving have current plan and  cancelled goal"),
+									+moving_back,
+					+stop_plan,
+					print("Stopping plan not moving"),
+					+!move_back[achieve];
 					
 +!stop_plan[achieve]: { B moving_back,
 						B moving} 
@@ -652,15 +694,15 @@ findplan[perform]
 					
 	
 
-+!achieve_plan(Goal,Index)[achieve]: {B moving} <-do_nothing;																			
-+!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
++!achieve_plan(Goal,Source,Index)[achieve]: {B moving} <-do_nothing;																			
++!achieve_plan(Goal,Source,Index)[achieve]: {~B current_plan(Goal,Source,Index,PlanActions),
 									B plan_exists(Goal,Source,Index,Actions,Annots),
 									~B moving,
 									~B moving_back
 											} 
 									<-
 									print("Achieving new plan"),
-									+current_plan(Goal,Index,Actions),
+									+current_plan(Goal,Source,Index,Actions),
 									+.lock,
 									+!reset_move_history[perform],
 									+!update_move_history[perform],
@@ -669,18 +711,18 @@ findplan[perform]
 									+!doActions[perform];
 
 
-+!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,[]),
++!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,[]),
 										~B moving,
 										~B moving_back	} 
 									<-
 									print("Achieved current plan"),
-									+achieve_plan(Goal,Index),
-									-current_plan(Goal,Index,[]),
+									+achieve_plan(Goal,Source,Index),
+									-current_plan(Goal,Source,Index,[]),
 									+!update_move_history[perform],
 									+!appendPrint("Achieved Plan for ",Goal)[perform],
 									+!findplan[perform];
 									
-+!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,PlanActions),
++!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,PlanActions),
 										~B moving,
 										~B moving_back	} 
 									<-
@@ -727,11 +769,11 @@ findplan[perform]
 					+move_back_list(TActs)
 					;
 					
-+!doActions[perform]: {B current_plan(Goal,Index,[FirstAction|ActionsTail])}
++!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
 					<-
 					+!doAction(FirstAction)[perform],
-					-current_plan(Goal,Index,[FirstAction|ActionsTail]),
-					+current_plan(Goal,Index,ActionsTail)
+					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
+					+current_plan(Goal,Source,Index,ActionsTail)
 					;
 					
 
@@ -812,7 +854,7 @@ findplan[perform]
 						+!appendPrint("movebase id ",Id)[perform],
 						print("The goal received a cancel request");
 					//+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,[]),
-//									 B current_plan(Goal,PlanIndex,PActions)}
+//									 B current_plan(Goal,Source,PlanIndex,PActions)}
 //						<-
 //						print("no violations so far");	
 +movebase_result(Id,7) : { B moving, B going(Loc) } <- 
@@ -876,37 +918,37 @@ findplan[perform]
 
 						
 +!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
-									 B current_plan(Goal,PlanIndex,PActions)}
+									 B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						+!appendPrint("Violated specs ",VSpecs)[perform],
 						+!appendPrint("Current plan goal",Goal)[perform],
 						+!appendPrint("Current plan index", PlanIndex)[perform],
-						+!update_annotations(Goal,PlanIndex,VSpecs)[perform];
+						+!update_annotations(Goal,Source,PlanIndex,VSpecs)[perform];
 
 +!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications(Loc,OrigSpec,VSpecs),
-									 ~B current_plan(Goal,PlanIndex,PActions)}
+									 ~B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						print("violated specs doing nothing");
 						
 +!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
-									 ~B current_plan(Goal,PlanIndex,PActions)}
+									 ~B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						print("violated specs doing nothing but no current plan either");	
 +!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications(Loc,OrigSpec,VSpecs),
-									 B current_plan(Goal,PlanIndex,PActions)}
+									 B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						print("violated specs doing nothing cuz no violated specs");					
 
-+!update_annotations(Goal,PlanIndex,[])[perform]: {True} <-
++!update_annotations(Goal,Source,PlanIndex,[])[perform]: {True} <-
 						print("no violations so far");
 						
-+!update_annotations(Goal,PlanIndex,ViolatedSpecs)[perform]: {
++!update_annotations(Goal,Source,PlanIndex,ViolatedSpecs)[perform]: {
 							B plan_exists(Goal,Source,PlanIndex,PlanActions,PlanAnnots),
 							B remove_list_from_list(ViolatedSpecs,PlanAnnots, NewPlanAnnots)} 
 						<-
 						// we believe this plan exists 
 						+.lock,
-						+!update_plans(Goal,PlanIndex,NewPlanAnnots)[perform],
+						+!update_plans(Goal,Source,PlanIndex,NewPlanAnnots)[perform],
 							+!stop_plan[achieve],
 						+!appendPrint("Violated list ",ViolatedSpecs)[perform],
 						+!appendPrint("Old annotations ",PlanAnnots)[perform],
@@ -914,8 +956,8 @@ findplan[perform]
 						
 						-.lock;
 						
-+!update_plans(Goal,PlanIndex,NewPlanAnnots)[perform]: { B plans(L),
-							B updated_plans(PlanIndex,L,NewPlanAnnots,NewL)}
++!update_plans(Goal,Source,PlanIndex,NewPlanAnnots)[perform]: { B plans(L),
+							B updated_plans(Goal,Source,PlanIndex,L,NewPlanAnnots,NewL)}
 							<-
 							+.lock,
 							//drop the old plans belief 
