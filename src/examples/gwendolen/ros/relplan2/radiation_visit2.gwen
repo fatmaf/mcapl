@@ -154,6 +154,17 @@ filter_satisfied_specs([OrigSpecsH | OrigSpecsT], FiltSpecs):-
 filter_satisfied_specs([OrigSpecsH | OrigSpecsT], [OrigSpecsH | FiltSpecs]):-
 	filter_satisfied_specs(OrigSpecsT,FiltSpecs);
 
+filter_violated_specs([],[]);
+filter_violated_specs([OrigSpecsH | OrigSpecsT], FiltSpecs):-
+	already_violated(OrigSpecsH),
+	filter_violated_specs(OrigSpecsT,FiltSpecs);
+filter_violated_specs([OrigSpecsH | OrigSpecsT], [OrigSpecsH | FiltSpecs]):-
+	filter_violated_specs(OrigSpecsT,FiltSpecs);
+
+filter_satisfied_violated_specs(OrigSpecs,NotSatisfiedNotViolatedSpecs):-
+	filter_satisfied_specs(OrigSpecs,NotSatisfied),
+	filter_violated_specs(NotSatisfied,NotSatisfiedNotViolatedSpecs);
+	
 //listing satisfied and unsatisfied specs 
 break_specs_satisfied_otherwise([],[],[]);
 break_specs_satisfied_otherwise([OrigSpecsH | OrigSpecsT], [OrigSpecsH | OtherSatSpecs], Otherwise):-
@@ -194,8 +205,27 @@ violated(Per,before(Loc,Per)):-
 violated_before(before(Loc1,Loc2)):-
     ~visited(Loc1,Tloc1),
     visited(Loc2,TLoc2);
+    
+already_violated(before(Loc1,Loc2)):-
+	violated_before(before(Loc1,Loc2));
+	
+already_violated(avoid(Loc)):-
+	visited(Loc,Tloc);
+
+
+	
+//getting all violated specs
+violated_specifications_wrapper(Per,Speclist,ViolatedSpecs):-
+	filter_satisfied_violated_specs(Speclist,Updatedlist),
+	possible_violations(PVSpecs),
+	remove_list_from_list(PVSpecs,UpdatedList,NewUpdatedList),
+	violated_specifications(Per,NewUpdatedlist,ViolatedSpecs);
 
 //getting all violated specs
+violated_specifications_wrapper(Per,Speclist,ViolatedSpecs):-
+	filter_satisfied_violated_specs(Speclist,Updatedlist),
+	violated_specifications(Per,Updatedlist,ViolatedSpecs);
+	
 violated_specifications(Per,[],[]);
 	
 violated_specifications(Per,[OrigSpecsH | OrigSpecsT],[OrigSpecsH | ViolSpecT]):-
@@ -285,18 +315,25 @@ check_plans_for_spec(L,NL,NL);
 
 //create_specifications_for_plan(Goal,NotGoalsList,Preferred,GoalsList,SpecsForPlan):-
 get_plans_for_speclist_weakening_wrapper(NotGoalsList,Preferred,Plans,PossiblePlans):-
-    append(NotGoalsList,Preferred,SpecsForPlans),
-   get_plans_for_speclist_weakening(SpecsForPlans,Plans,PossiblePlans);
+   append(NotGoalsList,Preferred,SpecsForPlans),
+   //filter_satisfied_violated_specs(SpecsForPlans,FiltSpecsForPlans),
+   get_plans_for_speclist_weakening(FiltSpecsForPlans,Plans,PossiblePlans);
 
     
 //getting plans with weakening 
-get_plans_for_speclist_weakening([],Plans,Plans);	
+get_plans_for_speclist_weakening([],Plans,Plans,[]);	
  
 get_plans_for_speclist_weakening([H|T],Plans,PossiblePlans):-
 	get_plans_for_spec(H,Plans,PlanSet),
 	check_plans_for_spec(Plans,PlanSet,NewPlanSet),
 	get_plans_for_speclist_weakening(T,NewPlanSet,PossiblePlans);
-			
+
+
+//getting possible violations 
+get_possible_violations(NotGoalsList,PreferredList,PlanAnnots,PossibleVSpecs):-
+	append(NotGoalsList,PreferredList,SpecsForPlan),
+	filter_satisfied_violated_specs(SpecsForPlan,FiltSpecs), 
+	remove_list_from_list(PlanAnnots,SpecsForPlan,PossibleVSpecs);
 
 //finding a plan 
 plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,
@@ -432,6 +469,7 @@ findplan[perform]
                                     print(G),
                                     print("Non goals list"),
                                     print(Ng),
+                                         +!print_filtered_specs[perform],
                                     +!get_plans[perform];
                                     
 +!set_up_initial_beliefs[perform]: {~B goalslist(G), ~B nongoalslist(Ng),
@@ -444,6 +482,7 @@ findplan[perform]
                                     print(NonGoalsList),
                                     +goalslist(GoalsList),
                                     +nongoalslist(NonGoalsList),
+                                    +!print_filtered_specs[perform],
                                     +!get_plans[perform];
 
 +!get_plans[perform]: {~B at(Loc)} <- //try and get some at 
@@ -471,8 +510,11 @@ findplan[perform]
 +!check_before_annots([],BSpecs)[perform] : { True
                                         }
                                       <-
-                                     print("All done")
+                                     print("All befores either violated or satisfied"),
+                                        +!belief_check[perform],
+                                      +!find_valid_plans(NewPlans)[perform]
                                       ;
+                                      
 +!check_before_annots(LocPlans,BSpecs)[perform] : { B annotate_plans_with_befores(LocPlans,BSpecs,NewPlans)
 ,B combined_specifications(CSpecs)
                                         }
@@ -486,7 +528,10 @@ findplan[perform]
                                       +!belief_check[perform],
                                       +!find_valid_plans(NewPlans)[perform]
                                       ;
-                                      
+ 
+ //lets update our nongoals and preferred lists 
+ //so that anything that has been satisfied or violated 
+ //is removed                                      
 +!belief_check[perform] : {B specification("Preferred",PSpecs),
 							B nongoalslist(Ng)
 							} <- 
@@ -494,13 +539,13 @@ findplan[perform]
 							print("Non goals list exists"), print(Ng);
 +!find_valid_plans(NewPlans)[perform] : {B specification("Preferred",PSpecs),
                                         B nongoalslist(Ng),
-                                    //    B get_plans_for_spec([avoid(danger_orange)],NewPlans,ChosenPlans)
                                         B get_plans_for_speclist_weakening_wrapper(Ng,PSpecs,NewPlans,ChosenPlans)
                                         }  <-
                                         print("Combined specs"),
                                         print(Ng),
                                         print(PSpecs)
                                         ,
+                     
                                         print("ChosenPlans"),
                                         print(ChosenPlans),
                                         +!select_first_plan(ChosenPlans)[perform]
@@ -510,42 +555,8 @@ findplan[perform]
 +!findplan[perform]: {True} <-
 				print("finding plan"),
 				+!set_up_initial_beliefs[perform];
-			//	+!update_specs[perform],
-			//	+!get_first_spec_plans[perform];
-				
-+!get_first_spec_plans[perform]: {B first_spec_with_plan(Spec,AllSpecPlans)} <-
-					+!appendPrint("Found plan for ", Spec)[perform],
-					+!appendPrint("Plan set all plans", AllSpecPlans)[perform],
-					
-					+!find_plans_no_weakening(Spec,AllSpecPlans)[perform];
-					
-					
-+!find_plans_no_weakening(Spec,AllSpecPlans)[perform] : {B rspec_with_no_otherplanspecs(Spec,NewRNoPlanSpec,NewRPlanSpec),
-														B get_plans_for_speclist_no_weakening(NewRNoPlanSpec,AllSpecPlans,FixedPlans)}
-											 <- 
-											 +!appendPrint("Updated required spec ",NewRNoPlanSpec)[perform],
-											 +!appendPrint("Removed specs ",NewRPlanSpec)[perform],
-											 +!appendPrint("We got some plans no weakening",FixedPlans)[perform],
-											 +!find_plans_weakening(Spec,NewRPlanSpec,FixedPlans)[perform]; 	
-											 
-+!find_plans_weakening(Goal,NewRPlanSpec,SpecPlans)[perform]: {B pspec_modified(NewRPlanSpec,WeakeningSpec),
-														  B get_plans_for_speclist_weakening(WeakeningSpec,SpecPlans,WeakenedPlans)} 
-											<-
-											+!appendPrint("Removed specs from req ",NewRPlanSpec)[perform],
-											+!appendPrint("Weakening spec ", WeakeningSpec)[perform],
-											+!appendPrint("Weakend plans ",WeakenedPlans)[perform],
-											+!select_first_plan(Goal,WeakenedPlans)[perform];
 
-+!select_first_plan([],[]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
-											print("Or something strange happened"),
-											+!get_satisfied_otherwise_specs[perform],
-											done;				
-											
-																		
-+!select_first_plan(Goal,[plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
-											print("Got plan"),
-											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
-											+!achieve_plan(Goal,Source,Index)[achieve];	
+
 +!select_first_plan([]) [perform] : {True} <- print("Goal and plans are empty"), print("Either all specs are achieved"),
 											print("Or something strange happened"),
 											+!get_satisfied_otherwise_specs[perform],
@@ -556,7 +567,21 @@ findplan[perform]
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
 											+!achieve_plan(Goal,Source,Index)[achieve];	
-
+											
++!add_possible_violations(PlanAnnots)[perform]: {B nongoalslist(Ng), B specification("Preferred",Pspecs), 
+					B get_possible_violations(Ng,Pspecs,PlanAnnots,PVSpecs), ~B possible_violations(X)}
+					<-
+						+possible_violations(PVSpecs),
+						+print("No possible violations"),
+						+!appendPrint("Added possible violations", PVSpecs)[perform];
+						
++!add_possible_violations(PlanAnnots)[perform]: {B nongoalslist(Ng), B specification("Preferred",Pspecs), 
+					B get_possible_violations(Ng,Pspecs,PlanAnnots,PVSpecs), B possible_violations(X)}
+					<- -possible_violations(X), 
+						+possible_violations(PVSpecs),
+						+!appendPrint("Removed possible violations",X)[perform],
+						+!appendPrint("Added possible violations", PVSpecs)[perform];
+						
 +!get_satisfied_otherwise_specs[perform]: {B combined_specifications(CSpecs),
 											B break_specs_satisfied_otherwise(CSpecs,SatSpecs,Other), 
 											B avoid_specs_only(Other)}
@@ -605,7 +630,13 @@ findplan[perform]
 
 -!stop_plan[achieve]: {True} <- +!print_beliefs[perform], print("dropping stop plan"), debug;
 
-
++!print_filtered_specs[perform] : {B combined_specifications(Cspecs), 
+									B filter_satisfied_specs(Cspecs,NotSatisfied),
+									B filter_violated_specs(NotSatisfied,NotViolatedSpecs) }
+									<- +!appendPrint("All specs ",CSpecs)[perform],
+									+!appendPrint("Not satisfied ",NotSatisfied)[perform],
+									+!appendPrint("Not violated ", NotViolatedSpecs)[perform];
+									
 +!print_beliefs[perform] : {True} <- +.lock, +!has_belief_current_plan[perform],
 +!has_belief_moving[perform], +!has_belief_moving_back[perform], +!has_belief_cancelled_goal[perform],-.lock;
 +!has_belief_current_plan[perform] : {B current_plan(G,S,I,P)} <- print("I believe there is a plan with"), print(G),
@@ -853,10 +884,7 @@ print(S),print(I), print(P);
 						+!appendPrint("moving to ",Loc)[perform],
 						+!appendPrint("movebase id ",Id)[perform],
 						print("The goal received a cancel request");
-					//+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,[]),
-//									 B current_plan(Goal,Source,PlanIndex,PActions)}
-//						<-
-//						print("no violations so far");	
+
 +movebase_result(Id,7) : { B moving, B going(Loc) } <- 
 						+!appendPrint("moving to ",Loc)[perform],
 						+!appendPrint("movebase id ",Id)[perform],
@@ -917,7 +945,7 @@ print(S),print(I), print(P);
 
 
 						
-+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
++!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications_wrapper(Loc,OrigSpec,VSpecs),
 									 B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						+!appendPrint("Violated specs ",VSpecs)[perform],
@@ -925,16 +953,16 @@ print(S),print(I), print(P);
 						+!appendPrint("Current plan index", PlanIndex)[perform],
 						+!update_annotations(Goal,Source,PlanIndex,VSpecs)[perform];
 
-+!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications(Loc,OrigSpec,VSpecs),
++!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications_wrapper(Loc,OrigSpec,VSpecs),
 									 ~B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						print("violated specs doing nothing");
 						
-+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications(Loc,OrigSpec,VSpecs),
++!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications_wrapper(Loc,OrigSpec,VSpecs),
 									 ~B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						print("violated specs doing nothing but no current plan either");	
-+!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications(Loc,OrigSpec,VSpecs),
++!get_violations(Loc,OrigSpec)[perform]: {~B violated_specifications_wrapper(Loc,OrigSpec,VSpecs),
 									 B current_plan(Goal,Source,PlanIndex,PActions)}
 						<-
 						print("violated specs doing nothing cuz no violated specs");					
