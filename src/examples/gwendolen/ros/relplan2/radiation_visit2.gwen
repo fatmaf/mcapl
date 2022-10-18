@@ -98,6 +98,7 @@ append([ H | T], X , [ H | W ]) :-
 
 remove_from_list(Elem,[],[]);
 remove_from_list(Elem,[Elem|L],L);
+//	remove_from_list(Elem,L,NL);
 remove_from_list(Elem,[NotElem | L],[NotElem | NL]):-
 	remove_from_list(Elem,L,NL);
 
@@ -105,6 +106,16 @@ remove_list_from_list([],L,L);
 remove_list_from_list([ToRemoveH | ToRemoveT ],L,NL):-
 	remove_from_list(ToRemoveH,L,NL1),
 	remove_list_from_list(ToRemoveT,NL1,NL); 
+	
+//if there are no annots we have nothing to remove	
+remove_annots_from_specs([],Spec,Spec);
+remove_annots_from_specs([H | T],Spec, RSpec):-
+	ismember(H,Spec),
+	remove_from_list(H,Spec,USpec),
+	remove_annots_from_specs(T,USpec,RSpec);
+remove_annots_from_specs([H | T],Spec,USpec):-
+	remove_annots_from_specs(T,Spec,USpec);
+	
 
 
 replaceFirst(_,_, [],[]);
@@ -216,16 +227,16 @@ already_violated(avoid(Loc)):-
 
 	
 ////getting all violated specs
-violated_specifications_wrapper(Per,Speclist,ViolatedSpecs):-
-	filter_satisfied_violated_specs(Speclist,Updatedlist),
-	possible_violations(PVSpecs),
-	remove_list_from_list(PVSpecs,UpdatedList,NewUpdatedList),
+violated_specifications_wrapper(Per,Speclist,PVSpecs,ViolatedSpecs):-
+//	filter_satisfied_violated_specs(Speclist,Updatedlist),
+//	possible_violations(PVSpecs),
+	remove_annots_from_specs(PVSpecs,UpdatedList,NewUpdatedList),
 	violated_specifications(Per,NewUpdatedlist,ViolatedSpecs);
 
 //getting all violated specs
-violated_specifications_wrapper(Per,Speclist,ViolatedSpecs):-
-	filter_satisfied_violated_specs(Speclist,Updatedlist),
-	violated_specifications(Per,Speclist,ViolatedSpecs);
+//violated_specifications_wrapper(Per,Speclist,ViolatedSpecs):-
+//	filter_satisfied_violated_specs(Speclist,Updatedlist),
+//	violated_specifications(Per,Speclist,ViolatedSpecs);
 	
 violated_specifications(Per,[],[]);
 	
@@ -334,7 +345,7 @@ get_plans_for_speclist_weakening([H|T],Plans,PossiblePlans):-
 get_possible_violations(NotGoalsList,PreferredList,PlanAnnots,PossibleVSpecs):-
 	append(NotGoalsList,PreferredList,SpecsForPlan),
 //	filter_satisfied_violated_specs(SpecsForPlan,FiltSpecs), 
-	remove_list_from_list(PlanAnnots,SpecsForPlan,PossibleVSpecs);
+	remove_annots_from_specs(PlanAnnots,SpecsForPlan,PossibleVSpecs);
 
 //finding a plan 
 plan_exists(CurrentLoc,Goal,PlanIndex,PlanActions,
@@ -459,7 +470,6 @@ create_specifications_for_plan(Goal,NotGoalsList,Preferred,GoalsList,SpecsForPla
 
 :Initial Goals:
 
-//doAction(move_to(tank1top))[perform]
 findplan[perform]
 
 :Plans:
@@ -574,29 +584,29 @@ findplan[perform]
 +!select_first_plan([plan(Goal,Source,Index,Actions,Annotations) |T])[perform] : {True} <- 
 											print("Got plan"),
 											+!printPlan(Goal,Source,Index,Actions,Annotations)[perform],
-											+!add_possible_violations(Annotations)[perform],
-											+!achieve_plan(Goal,Source,Index)[achieve];	
+											+!add_possible_violations(Annotations)[perform]
+											,
+											+!achieve_plan(Goal,Source,Index)[achieve]
+											;	
 											
 +!add_possible_violations(PlanAnnots)[perform]: {B nongoalslist(Ng), B specification("Preferred",Pspecs), 
-	B append(Ng,Pspecs,SpecsForPlan),
-	B remove_list_from_list(PlanAnnots,SpecsForPlan,PVspecs)
-//					B get_possible_violations(Ng,Pspecs,PlanAnnots,PVSpecs), ~B possible_violations(X)
+					B get_possible_violations(Ng,Pspecs,PlanAnnots,PVSpecs), ~B possible_violations(XViols)
 					}
 					<-
 					+!appendPrint("Nongoals list ",Ng)[perform],
 					+!appendPrint("Preferred specs ",Pspecs)[perform],
 					+!appendPrint("Combined specs ",SpecsForPlan)[perform],
 					+!appendPrint("Got annotations ",PlanAnnots)[perform],
-//						+possible_violations(PVSpecs),
+						+possible_violations(PVspecs),
 						+print("No possible violations"),
-						+!appendPrint("Added possible violations", PVSpecs)[perform],done;
+						+!appendPrint("Added possible violations", PVSpecs)[perform];
 						
 +!add_possible_violations(PlanAnnots)[perform]: {B nongoalslist(Ng), B specification("Preferred",Pspecs), 
-					B get_possible_violations(Ng,Pspecs,PlanAnnots,PVSpecs), B possible_violations(X)}
+					B get_possible_violations(Ng,Pspecs,PlanAnnots,PVSpecs), B possible_violations(XViols)}
 					<- 
-					+!appendPrint("Removed possible violations",X)[perform],
-//					-possible_violations(X), 
-//						+possible_violations(PVSpecs),
+					+!appendPrint("Removed possible violations",XViols)[perform],
+					-possible_violations(XViols), 
+						+possible_violations(PVSpecs),
 						
 						+!appendPrint("Added possible violations", PVSpecs)[perform];
 						
@@ -962,10 +972,23 @@ print(S),print(I), print(P);
 
 
 
-						
-+!get_violations(Loc,OrigSpec)[perform]: {B violated_specifications_wrapper(Loc,OrigSpec,VSpecs),
-									 B current_plan(Goal,Source,PlanIndex,PActions)}
++!get_violations(Loc,OrigSpec)[perform]: {~B possible_violations(PVs),
+			B violated_specifications_wrapper(Loc,OrigSpec,[],VSpecs),
+									 B current_plan(Goal,Source,PlanIndex,PActions)
+									}
 						<-
+						+!appendPrint("Ignore violations ",PVs)[perform],
+						+!appendPrint("Violated specs ",VSpecs)[perform],
+						+!appendPrint("Current plan goal",Goal)[perform],
+						+!appendPrint("Current plan index", PlanIndex)[perform],
+						+!update_annotations(Goal,Source,PlanIndex,VSpecs)[perform];
+						
++!get_violations(Loc,OrigSpec)[perform]: {B possible_violations(PVs),
+			B violated_specifications_wrapper(Loc,OrigSpec,PVs,VSpecs),
+									 B current_plan(Goal,Source,PlanIndex,PActions)
+									}
+						<-
+												+!appendPrint("Ignore violations ",PVs)[perform],
 						+!appendPrint("Violated specs ",VSpecs)[perform],
 						+!appendPrint("Current plan goal",Goal)[perform],
 						+!appendPrint("Current plan index", PlanIndex)[perform],
