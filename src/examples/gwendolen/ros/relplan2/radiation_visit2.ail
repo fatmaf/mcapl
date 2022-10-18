@@ -11,4 +11,4 @@ log.warning = ail.mas.DefaultEnvironment
 log.format = brief
 
 
-log.finer = ail.syntax.EvaluationAndRuleBaseIterator
+//log.finer = ail.syntax.EvaluationAndRuleBaseIterator
