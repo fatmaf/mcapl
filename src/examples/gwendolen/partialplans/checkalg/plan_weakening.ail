@@ -28,4 +28,4 @@ env = gwendolen.partialplans.checkalg.MoveEnvWithNear_l6
 
 log.warning = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent
-///log.fine = ail.syntax.EvaluationAndRuleBaseIterator
+//log.fine = ail.syntax.EvaluationAndRuleBaseIterator
