@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="testpl" type="PrologRunConfiguration" factoryName="Prolog">
+    <setting name="targetFile" value="$PROJECT_DIR$/src/examples/gwendolen/partialplans/checkalg/scratch.pl" />
+    <setting name="extraArgs" value="" />
+    <method v="2" />
+  </configuration>
+</component>
