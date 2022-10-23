@@ -203,9 +203,11 @@ before_violated(Loc1,Loc2):-
     ~visited(Loc1,Tl1),
     visited(Loc2,Tl2);
 
-before_unknown(Loc1,Loc2):-
-    ~before_satisfied(Loc1,Loc2),
-    ~before_violated(Loc1,Loc2);
+before_unknown(Locone,Loctwo):-
+//    ~before_satisfied(Loc1,Loc2),
+//    ~before_violated(Loc1,Loc2);
+    ~visited(Locone,Tlone),
+    ~visited(Loctwo,Tltwo);
 
 avoid_violated(Loc):-
     visited(Loc,Tl);
@@ -298,9 +300,9 @@ annotate_all_plans(Start,Locs,AllPossibleBefores,[],[]);
 annotate_all_plans(Start,Locs,AllPossibleBefores,[plan(Goal,Source,Index,Actions) | TPlans],[plan(Goal,Source,Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
     get_annotations(AllPossibleBefores,Source,Actions,Start,Locs,VisitAnnots,BeforesAnnots),
     annotate_all_plans(Start,Locs,AllPossibleBefores,TPlans,TUpdatedPlans);
-update_before_annotations(UnknownBefores,[plan(Goal,at(Loc),Index,Actions,VisitAnnots,OBeforesAnnots) | TPlans],[plan(Goal,at(Loc),Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
+update_before_annotations([plan(Goal,at(Loc),Index,Actions,VisitAnnots,OBeforesAnnots) | TPlans],[plan(Goal,at(Loc),Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
     append([visit(Loc,0)],VisitAnnots,TempVisitAnnots),
-    generate_befores_for_plan(UnknownBefores,TempVisitAnnots,BeforesAnnots);
+    generate_befores_for_plan(OBeforesAnnots,TempVisitAnnots,BeforesAnnots);
 //step 3
 //now we've annotated our plans
 //so we can select plans we want
@@ -506,11 +508,15 @@ initial_setup[perform]
                                            ,+specification("befores","unknown",NUb)
                                            ,+specification("befores","satisfied",NSb)
                                            ,+specification("befores","violated",NVb);
-+!update_annotations[perform]: {  B specification("befores","unknown",UnknownBefores),
++!update_annotations[perform]: {
                                                                   B plans(Plans)
                                                                   ,B initial_setup_complete
-                                                                   ,B update_before_annotations(UnknownBefores,Plans,UpdatedPlans)}
+                                                                   ,B update_before_annotations(Plans,UpdatedPlans)}
                                                                    <-
+                                                                   print("Old plans"),
+                                                                   print(Plans),
+                                                                   print("Updated plans"),
+                                                                   print(UpdatedPlans),
                                                                    -plans(Plans),
                                                                    +plans(UpdatedPlans);
 
@@ -524,6 +530,12 @@ initial_setup[perform]
                                 ,B plans(Plans)
                                 ,B plans_from_loc_with_any_specification(Loc,Specs,Plans,AvailablePlans)}
                                 <-
+                                print("at"),
+                                print(Loc),
+                                print("Combined specs"),
+                                print(Specs),
+                                print("Plans"),
+                                print(Plans),
                                 print("Available plans"),
                                 print(AvailablePlans),
                                 +!find_valid_plans_action(AvailablePlans)[perform];
