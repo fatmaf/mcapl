@@ -300,9 +300,12 @@ annotate_all_plans(Start,Locs,AllPossibleBefores,[],[]);
 annotate_all_plans(Start,Locs,AllPossibleBefores,[plan(Goal,Source,Index,Actions) | TPlans],[plan(Goal,Source,Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
     get_annotations(AllPossibleBefores,Source,Actions,Start,Locs,VisitAnnots,BeforesAnnots),
     annotate_all_plans(Start,Locs,AllPossibleBefores,TPlans,TUpdatedPlans);
+
+update_before_annotations([],[]);
 update_before_annotations([plan(Goal,at(Loc),Index,Actions,VisitAnnots,OBeforesAnnots) | TPlans],[plan(Goal,at(Loc),Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
     append([visit(Loc,0)],VisitAnnots,TempVisitAnnots),
-    generate_befores_for_plan(OBeforesAnnots,TempVisitAnnots,BeforesAnnots);
+    generate_befores_for_plan(OBeforesAnnots,TempVisitAnnots,BeforesAnnots),
+    update_before_annotations(TPlans,TUpdatedPlans);
 //step 3
 //now we've annotated our plans
 //so we can select plans we want
