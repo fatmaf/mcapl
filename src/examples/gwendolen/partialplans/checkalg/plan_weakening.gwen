@@ -556,7 +556,7 @@ initial_setup[perform]
                                 B specification("Required","not goals",Ng)
                                 ,B specification("Preferred",Pspec)
 //                                ,B get_plans_for_spec([before([l3,l5]),before([l1,l3]),before([l1,l5])],AvailablePlans,ValidPlans)
-                                ,B find_valid_plans(Ng,Pspec,AvailablePlans,ValidPlans)
+                                ,B find_valid_plans([before([l3,l5])],[],AvailablePlans,ValidPlans)
                              }
                              <-
                              print(Ng),
@@ -738,85 +738,7 @@ initial_setup[perform]
                                                 } <-
                                                 print("Possible Violations"),
                                                 print(PossibleViolations);
-// befores again
-//+!generate_befores_test[perform]: {B generate_all_possible_befores_wrapper([l1,l2,l3],[l1,l2,l3],AllPossibleBefores)}
-//                <- print("befores"), print(AllPossibleBefores);
-////get_annotations(AllPossibleBefores,Source,Actions,Start,Locs,Annotations)
-//+!test_get_plan_annots[perform]: {
-//                                    B locations_of_interest(Locs),
-//
-////                                    B get_visit_annotations([move_to(l2), move_to(l3), move_to(l4), move_to(l5), move_to(l1)],1,Locs,VisitAnnots)
-////                                    B get_annotations([before([l3,l1]),before([l1,l2])],at(l0),[move_to(l2), move_to(l3), move_to(l4), move_to(l5), move_to(l1)],1,Locs,Annots)
-//}
-//                                    <-
-//                                    print("Annots"),
-//                                    print(Annots);
-//+!test_generate_befores[perform]: {B generate_all_possible_befores([l3,l1,l5,l6],AllPossibleBefores)} <- print("All possible befores"),print(AllPossibleBefores);
-////+!add_helper_beliefs[perform] : {B original_specification("Required",Rspec), B original_specification("Preferred",Pspec)} <-  +specification("Required",Rspec),+specification("Preferred",Pspec),                            +!generate_inc_beliefs(0)[perform];
-//+!generate_all_befores(Locs)[perform] : {B generate_befores_from_beliefs(Locs,UnknownBefores,SatisfiedBefores,ViolatedBefores,AllPossibleBefores)}
-//                                <-
-//+!add_plan_annotations[perform] : {~B locations_of_interest(X),
-//                                    B combined_specifications(Specs),
-//                                   B strip_locations_from_specs_wrapper(Specs,Locs)
-//
-//                            }
-//                                   <-
-//                                   print("Locs"),
-//                                   print(Locs),
-//                                   +locations_of_interest(Locs),
-//                                   +!add_plan_annotations(Locs)[perform]
-//                                    ;
-//+!add_plan_annotations(Locs)[perform] : {
-//                                            B plans(Plans),
-//                                            B annotate_all_plans(1,Locs,Plans,AnnotatedPlans,GoalsList)
-//                                            }
-//                                    <-                                     -plans(Plans),
-//                                                                           +plans(AnnotatedPlans),
-//                                                                           print("Annotated Plans"),
-//                                                                           print(AnnotatedPlans),
-//                                                                           +!generate_notgoals_belief(GoalsList)[perform];
-//
-//+!generate_notgoals_belief(GoalsList)[perform] : {B specification("Required",Rspec),
-//                                                  B break_required_specs_into_goals_and_not_goals(Rspec,GoalsList,NotGoalsList)
-//                                                  }
-//                                    <-
-//                                    print("Not goals list"),
-//                                    print(NotGoalsList),
-//                                    +specification("Required","not goals",NotGoalsList)
-//                                    ;
-//+!get_available_plans[perform] : {B at(Loc),
-//                                  B plans(Plans),
-//                                  B combined_specifications(Specs)}
-//                                <- +!appendPrint("Loc ",Loc)[perform],
-//                                +!appendPrint("Plans ",Plans)[perform],
-//                                +!appendPrint("Specs ",Specs)[perform],
-//                                +!get_available_plans(Loc,Specs,Plans)[perform];
-//+!get_available_plans(Loc,Specs,Plans)[perform]: {B plans_from_loc_with_any_specification(Loc,Specs,Plans,APlans)}
-//                         <- print("Available plans"),print(APlans),
-//                         +!print_specification_beliefs[perform],
-//                         +!testGetPlansForSpec[perform],
-//                         +!get_all_valid_plans(APlans)[perform];
-//+!print_specification_beliefs[perform]: {B specification("Required",Rspec),
-//                                         B specification("Preferred",Pspec),
-//                                         B specification("Required","not goals",Ng)}
-//                                         <-
-//                                         +!appendPrint("Req",Rspec)[perform],
-//                                         +!appendPrint("Pref",Pspec)[perform],
-//                                         +!appendPrint("Req ng",Ng)[perform];
-//
-//+!get_all_valid_plans(APlans)[perform]: {B specification("Required","not goals",Ng),
-//                                        B specification("Preferred",Pspecs),
-//                                        B find_valid_plans(Ng,Pspecs,APlans,ValidPlans)}
-//                                        <-
-//                                        print("Valid plans"),
-//                                        print(ValidPlans);
-//
-//
-//+!testGetPlansForSpec[perform] : {B plans(Plans),
-//                                  B get_plans_for_spec(visit(l1),Plans,ValidPlans)}
-//                                  <-
-//                                  print("Got plans for spec"),
-//                                  print(ValidPlans);
+
 +!printBeliefPlans[perform] : {B plans(Plans)} <- print(Plans);
 //test reasoning rules here
 
