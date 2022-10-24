@@ -10,16 +10,16 @@ GWENDOLEN
 
 //just to count the locations
 
-visited(l0,0)
-visited(l7,1)
-visited(l8,2)
-visited(l9,3)
-visited(l1,4)
-visited(l2,5)
-visited(l3,6)
-location_count(7)
+//visited(l0,0)
+//visited(l7,1)
+//visited(l8,2)
+//visited(l9,3)
+//visited(l1,4)
+//visited(l2,5)
+//visited(l3,6)
+//location_count(7)
 
-//location_count(0)
+location_count(0)
 
 //to record movement
 move_history([])

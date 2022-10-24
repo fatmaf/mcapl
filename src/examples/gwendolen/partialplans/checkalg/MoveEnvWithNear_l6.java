@@ -8,7 +8,7 @@ import ail.util.AILexception;
 
 public class MoveEnvWithNear_l6 extends DefaultEnvironment {
 
-	String prevloc = "l3";
+	String prevloc = "l0";
 	boolean fm = true;
 
 	@Override
