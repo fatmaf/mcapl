@@ -623,6 +623,12 @@ initial_setup[perform]
                                 print(AvailablePlans),
                                 +!find_valid_plans_action(AvailablePlans)[perform];
 
++!print_specification_status[perform]: {
+                                    B specification("Combined",Specs),                                            B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
+                                        }   <-
+                                        +!appendPrint("Unknown specs",USpecs)[perform],
+                                        +!appendPrint("Satisfied specs",SSpecs)[perform],
+                                        +!appendPrint("Violated specs",VSpecs)[perform];
 
 +!get_specifications_status[perform]: {B specification("Combined",Specs),
 //                            B unknown_specs(Specs,USpecs)
@@ -675,7 +681,7 @@ initial_setup[perform]
 // choose a plan and add all the annotations from that plan
 // that you care about i.e. the ones in your specifications
 // to a possible violations list
-+!choose_first_plan([])[perform]: {True} <- print("No valid plans so we are all done");
++!choose_first_plan([])[perform]: {True} <- print("No valid plans so we are all done"), +!print_specification_status[perform];
 +!choose_first_plan(ValidPlans)[perform]: {B get_first_plan(ValidPlans,plan(Goal,Source,Index,Actions,Vannots,Bannots))
                                             ,B specification("Not goals",AllNotGoalsList)
                                             ,B specs_in_not_goals_not_satisfied(AllNotGoalsList,Vannots,Bannots,PossibleViolations)
