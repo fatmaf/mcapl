@@ -93,12 +93,12 @@ combined_specifications(CSpecs):-
 
 update_visit_time_from_time(StartTime,TimeIndex,[],[]);
 update_visit_time_from_time(StartTime,StartTime,[visit(Loc,StartTime) | Tail],[visit(Loc,NewTimeIndex) | Rest]):-
-    inc(StartTime,NewTimeIndex),
+    next_number(StartTime,NewTimeIndex),
     update_visit_time_from_time(StartTime,NewTimeIndex,Tail,Rest);
 update_visit_time_from_time(StartTime,StartTime,[visit(Loc,TimeIndex) | Tail],[visit(Loc,TimeIndex) | Rest]):-
     update_visit_time_from_time(StartTime,StartTime,Tail,Rest);
 update_visit_time_from_time(StartTime,TimeIndex,[visit(Loc,TimeIndex)| Tail],[visit(Loc,NewTimeIndex) | Rest]):-
-    inc(TimeIndex,NewTimeIndex),
+    next_number(TimeIndex,NewTimeIndex),
     update_visit_time_from_time(StartTime,TimeIndex,Tail,Rest);
 
 replace_first_visit_in_visitslist(Loc,TimeIndex,NewTimeIndex,[],[]);
@@ -471,23 +471,15 @@ can_violate(near(Loc),[H | T],Rest):-
 // and then just update our plans
 //revise_annotations(Loc,Percept,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
 //revise_annotations(Loc,near(NextLoc),Vannots,Bannots,NewVannots,UpdatedBannots):-
-revise_annotations(Loc,near(NextLoc),CurrentPlanIndex,Vannots,Bannots,UpdatedVannots,Bannots):-
+//revise_annotations(Loc,Percept,Pindex,Vannots,Bannots,UpdatedVannots,UB)
+revise_annotations(Loc,near(NextLoc),CurrentPlanIndex,Vannots,Bannots,FinalVannots,UpdatedBannots):-
 // insert nextloc at current plan index
-    inc(CurrentPlanIndex,IncrementedIndex),
-    update_visit_time_from_time(IncrementedIndex,IncrementedIndex,Vannots,UpdatedVannots);
-//    append([visit(NextLoc,CurrentPlanIndex)],UpdatedVannots,Bannots),
-    // everything thats greater than CurrentPlanIndex needs to be increased by 1
-    // find out where you are in Vannots
-//    ismember(visit(Loc,Tl),Vannots);
-//    inc(Tl,Tlplusone),
-//    update_visit_time_from_time(Tlplusone,Tlplusone,Vannots,UpdatedVannots),
-//    append([visit(NextLoc,Tlplusone)],UpdatedVannots,NewVannots),
-//    generate_befores_for_plan(Bannots,NewVannots,UpdatedBannots);
-    // now we have this Tl
-    // and we just add it to Vannots
-    // and then revise Bannots
-    //update Vannots
-    // everything after Tl goes to +1
+    next_number(CurrentPlanIndex,IncrementedIndex),
+    update_visit_time_from_time(IncrementedIndex,IncrementedIndex,Vannots,UpdatedVannots),
+    next_number(CurrentPlanIndex,NextLocIndex),
+    append([visit(NextLoc,NextLocIndex)],UpdatedVannots,FinalVannots),
+    generate_befores_for_plan(Bannots,FinalVannots,UpdatedBannots);
+
 
 replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans):-
     replace_first_plan_in_plans(Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,Plans,NewPlans);
@@ -668,8 +660,7 @@ initial_setup[perform]
 +!find_valid_plans_action(AvailablePlans)[perform]: {
                                 B specification("Required","not goals",Ng)
                                 ,B specification("Preferred",Pspec)
-//                                ,B get_plans_for_spec([before([l3,l5]),before([l1,l3]),before([l1,l5])],AvailablePlans,ValidPlans)
-                                ,B find_valid_plans([before([l3,l5])],[],AvailablePlans,ValidPlans)
+                                ,B find_valid_plans(Pspec,Ng,AvailablePlans,ValidPlans)
                              }
                              <-
                              print(Ng),
@@ -750,7 +741,7 @@ initial_setup[perform]
 					  ~B move_back_list(MBL)}
 					  <-
 
-					  +!stop_moving[perform],
+//					  +!stop_moving[perform],
 					  +move_back_list([FAct|TActs]),
 					  +!doMoveBackActions[perform];
 
@@ -863,70 +854,41 @@ initial_setup[perform]
 +!doneMove(Loc)[perform]: {~B moving} <- do_nothing;
 +!doneMove(Loc)[perform]: {B moving}
 							<-
-							print("done move"),
-							+doAction(move_to(Loc)),
-							-moving;
+							print("done move"), +doAction(move_to(Loc)), -moving;
 +at(Loc): {True} <-
 			+.lock,
-			+!visitedLoc(Loc)[perform],
-			+!doneMove(Loc)[perform],
-			+!appendPrint("Visited ",Loc)[perform],
+			+!visitedLoc(Loc)[perform], +!doneMove(Loc)[perform], +!appendPrint("Visited ",Loc)[perform],
 			-.lock;
 
 -at(Loc): {True} <- +!appendPrint("Removed percept for at ",Loc)[perform];
 +!visitedLoc(Loc)[perform] : {B location_count(C), ~B visited(Loc,C)}
 						<-
-						+visited(Loc,C),
-						-location_count(C),
-						sum(C,1,NewC),
-						+location_count(NewC);
+						+visited(Loc,C), -location_count(C), sum(C,1,NewC), +location_count(NewC);
 
 
 +!visitedLoc(Loc)[perform] : {B location_count(C), B visited(Loc,Cy)}
 						<-
-						+!appendPrint("Visited loc before",Loc)[perform],
-						+!appendPrint("At step",Cy)[perform],
-						+!appendPrint("Current count",C)[perform],
-						+visited(Loc,C),
-						-location_count(C),
-						sum(C,1,NewC),
-						+location_count(NewC);
+						+!appendPrint("Visited loc before",Loc)[perform], +!appendPrint("At step",Cy)[perform], +!appendPrint("Current count",C)[perform],
+						+visited(Loc,C), -location_count(C), sum(C,1,NewC), +location_count(NewC);
 +near(Loc): {True } <-
-
-					+!appendPrint("Near ", Loc)[perform],
-					+!get_violations(near(Loc))[perform]
+					+!appendPrint("Near ", Loc)[perform], +!get_violations(near(Loc))[perform]
 					;
 +!get_violations(Percept)[perform]: {B specification("Can violate",Specs)
                             ,B can_violate(Percept,Specs,CouldViolateSpecs)
-                            }
-                            <-
-
-                            print("Could violate"),
-                            print(CouldViolateSpecs),
+                            } <-
+                            print("Could violate"),  print(CouldViolateSpecs),
                             +!stop_current_plan(Percept,CouldViolateSpecs)[perform];
+
  +!stop_current_plan(Percept,[])[perform]: {True} <- print("No violations possible so not stopping the plan");
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]: {True} <- print("Stop plan"), print("Need to update the specification for this plan"),
                                                 +!revise_annotations_action(Percept,CouldViolateSpecs)[perform];
-// once you've done that, you must revise your annotations
-// to revise your annotations you need the ones it can violate
-// we can only violate a before or an avoid
-// if its an avoid, we add a visit to our list
-// if its a before, we are basically visiting l2 before l1, so we need to add a visit too
-// and then just repeat the before annots for this plan
-// and then just update our plans
-// so the revise annotations function takes in the CouldViolateSpecs and the current plan
-// gives you back the updated plan annots
-// and then you replace that plan in your big plans list
-// and then you're done
-+!revise_annotations_action(Percept,CouldViolateSpecs)[perform]: {
 
++!revise_annotations_action(Percept,CouldViolateSpecs)[perform]: {
                                                           B current_plan(Goal,Source,Index,Actions),
                                                           B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
                                                           B at(Loc)
-                                                          ,
-                                                          B plan_index(Pindex)
-                                                          , B revise_annotations(Loc,Percept,Pindex,Vannots,Bannots,UpdatedVannots,UB)
-//                                                          B revise_annotations(Loc,Percept,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
+                                                          ,B plan_index(Pindex)
+                                                          ,B revise_annotations(Loc,Percept,Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
                                                           }
                                                           <-
                                                           +.lock,
@@ -936,70 +898,53 @@ initial_setup[perform]
                                                           ,+!appendPrint("Current plan ",Goal)[perform]
                                                           ,print(Source)
                                                           ,print(Index)
-                                                          ,
-                                                          +!appendPrint("Percept ",Percept)[perform]
-                                                          ,
-                                                          print("Updated"),
+                                                          ,+!appendPrint("Percept ",Percept)[perform]
+                                                          ,print("Updated"),
                                                           +!appendPrint("Plan index",Pindex)[perform],
                                                           +!appendPrint("Updated Vannots",UpdatedVannots)[perform],
-
-//                                                          +!printPlan(Goal,Source,Index,Actions,UpdatedVannots,UpdatedBannots)[perform],
-//                                                          +!update_plan_in_plans(Goal,Source,Index,Actions,UpdatedVannots,UpdatedBannots)[perform]
+                                                          +!appendPrint("Updated Bannots",UpdatedBannots)[perform],
+                                                          +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                                                          +!update_plan_in_plans(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                                                         -.lock
                                                           ;
 
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
-                                                                                B plans(Plans),
-                                                                               B replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
-                                                                               }
-                                                                               <-
-                                                                               print("Dropping old plans"),
+                            B plans(Plans),   B replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
+                                                                               } <-
+                                                                               print("Updating violated annots Dropping old plans"),
                                                                                print(Plans),
                                                                                -plans(Plans),
-                                                                               print("Adding new plans"),
+                                                                               print("Updating violated annots Adding new plans"),
                                                                                print(NewPlans),
-                                                                               +plans(NewPlans)
-                                                                               // now you can find a new plan weee
-
-                                                                               ;
-
-
-// to get rid of things that are satisfied
-// in theory we will just say satisfied(spec)
-// violated(spec)
-// we'll add these as beliefs
-
+                                                                               +plans(NewPlans),
+                                                                               +!drop_current_plan[perform]
+                                                                              ;
 
 +!initial_setup[perform]: {True} <-
                             +.lock,
                             print("Initialising helper beliefs"),
                             +!add_helper_beliefs[perform],
                             print("Helper beliefs initialised"),
-
                             print("Annotating plans"),
                             +!add_plan_annotations_action [perform],
-
                             +!get_specifications_status[perform],
                             -.lock;
-// test functions
-//violations
-//+!test_possible_violations[perform] : {B specs_in_not_goals_not_satisfied([before([l3,l5]),before([l1,l3]),before([l1,l5]),avoid(l6)],[visit(l1,1),visit(l6,3),visit(l2,2)],[before([l3,l6]),before([l1,l3]),before([l1,l5]),before([l1,l6]),before([l5,l3]),before([l5,l6]),before([l6,l3]),before([l6,l5])],PossibleViolations)
-//                                                } <-
-//                                                print("Possible Violations"),
-//                                                print(PossibleViolations);
 
 +!printBeliefPlans[perform] : {B plans(Plans)} <- print(Plans);
 //test reasoning rules here
-
++!test_revise_annotations[perform]:{B revise_annotations(l3,near(l6),2,[visit(l3,0),visit(l5,3)],[before([l5,l6]),before([l3,l5])],UpdatedVannots,UpdatedBannots)
+                            } <-
+                                 print("Updated V Annotations"), print(UpdatedVannots),
+                                print("Updated B Annotations"), print(UpdatedBannots);
 
 						
-+!printMH(PrefixText)[perform] : {B move_history(MH),
-                                   B plan_index(Pindex)
-                                   }
-							<-
++!printMH(PrefixText)[perform] : {
+                                B move_history(MH), B plan_index(Pindex)
+                                   } <-
 							append(PrefixText," MH ", Text),	
 							+!appendPrint(Text,MH)[perform],
 							+!appendPrint("Plan Index ",Pindex)[perform];
+
 +!appendPrint(PString,PVar)[perform] : {True} <- 
 							 +.lock,
 							 toString(PVar,PVarS),
