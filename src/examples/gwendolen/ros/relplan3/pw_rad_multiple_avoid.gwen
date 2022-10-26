@@ -77,7 +77,7 @@ plans( [
 //specification("Required",[visit(tank1right),visit(pipes)])
 //specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
 original_specification("Required",[visit(iP1),visit(pipes),visit(t2bottom),visit(tankset)])
-original_specification("Preferred",[avoid(t2left),before(iP1,t2bottom),before(iP1,tankset),before(iP1,pipes),before(t2bottom,pipes),before(tankset,pipes),before(t2bottom,tankset)])
+original_specification("Preferred",[avoid(t2left),before([iP1,t2bottom]),before([iP1,tankset]),before([iP1,pipes]),before([t2bottom,pipes]),before([tankset,pipes]),before([t2bottom,tankset])])
 
 
 max_plan_len(20)
@@ -536,7 +536,8 @@ initial_setup[perform]
                                 +specification("Required","not goals",NotGoalsList)
                                 ;
 +!add_locations_of_interest[perform]:
-                                      {B combined_specifications(CSpecs),
+                                      {B combined_specifications(CSpecs)
+                                      ,
                                        B strip_locations_from_specs_wrapper(CSpecs,Locs)
                                        }
                                        <-
@@ -544,10 +545,13 @@ initial_setup[perform]
                                        +specification("Combined",CSpecs)
                                        ;
 +!do_all_spec_beliefs[perform] : {True} <- +.lock,
+//                                            +!print_specification_beliefs[perform],
                                             +!add_specifications[perform],
+                                             +!print_specification_beliefs[perform],
                                              +!add_locations_of_interest[perform],
+                                                    +!print_specification_beliefs[perform],
                                             +!add_not_goals_spec[perform],
-
+                                            +!print_specification_beliefs[perform],
                                              +!generate_befores[perform],
                                              -.lock;
 +!print_specification_beliefs[perform]: {True} <- +!print_specification_belief("Required")[perform],
@@ -556,7 +560,8 @@ initial_setup[perform]
                                     +!print_specification_belief("Goals")[perform];
 +!print_not_goals[perform]: {B specification("Required","not goals",Ng), B locations_of_interest(Locs)} <- print("Req not goals"),print(Ng), print("Locs of interest"), print(Locs);
 
-+!print_specification_belief(SName)[perform]: {B specification(SName,Spec)} <- print(SName), print(Spec);
++!print_specification_belief(SName)[perform]: {B specification(SName,Spec)} <- print(SName," ",Spec);
++!print_specification_belief(SName)[perform]: {~B specification(SName,Spec)} <- print(SName," does not exist");
 // Generating befores
 +!generate_befores[perform]: {B locations_of_interest(Locs),
                               B generate_befores_from_beliefs(Locs,UnknownBefores,SatisfiedBefores,ViolatedBefores,AllPossibleBefores)  }

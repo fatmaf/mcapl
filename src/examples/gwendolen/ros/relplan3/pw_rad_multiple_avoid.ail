@@ -21,7 +21,7 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/ros/relplan3/plan_weakening_radiation_single_visit_avoid_loc.gwen
+mas.file = /src/examples/gwendolen/ros/relplan3/pw_rad_multiple_avoid.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
 env = gwendolen.ros.relplan3.RosEnvAtPercept
@@ -30,3 +30,4 @@ log.warning = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent
 //log.fine = ail.syntax.EvaluationAndRuleBaseIterator
 pretty=ail
+//
