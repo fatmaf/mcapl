@@ -469,17 +469,12 @@ findplan[perform]
                                      print("All done")
                                       ;
 +!check_before_annots(LocPlans,BSpecs)[perform] : { B annotate_plans_with_befores(LocPlans,BSpecs,NewPlans)
-,B combined_specifications(CSpecs)
-                                        }
+                                                    ,B combined_specifications(CSpecs) }
                                       <-
                                       print("Checking annots"),
                                       print(LocPlans),
                                       print("Updated annots"),
-                                      print(NewPlans)
-//                                      , print("Combined specs"),
-//                                                                               print(CSpecs)
-
-                                      ,
+                                      print(NewPlans),
                                       +!belief_check[perform],
                                       +!find_valid_plans(NewPlans)[perform]
                                       ;
@@ -670,11 +665,9 @@ findplan[perform]
 //												print("Plan stopped");		
 
 +!achieve_plan(Goal,Index)[achieve]: {B moving} <- do_nothing;																			
-+!achieve_plan(Goal,Index)[achieve]: {~B current_plan(Goal,Index,PlanActions),
-									B plan_exists(Goal,Source,Index,Actions,Annots),
-									~B moving,
-									~B moving_back
-											} 
++!achieve_plan(Goal,Index)[achieve]: {
+                                    ~B current_plan(Goal,Index,PlanActions), B plan_exists(Goal,Source,Index,Actions,Annots),
+									~B moving, ~B moving_back }  /*done*/
 									<-
 									print("Achieving new plan"),
 									+current_plan(Goal,Index,Actions),
@@ -687,7 +680,7 @@ findplan[perform]
 
 
 +!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,[]),
-										~B moving,
+										~B moving, /*done*/
 										~B moving_back	} 
 									<-
 									print("Achieved current plan"),
@@ -698,7 +691,7 @@ findplan[perform]
 									+!findplan[perform];
 									
 +!achieve_plan(Goal,Index)[achieve]: {B current_plan(Goal,Index,PlanActions),
-										~B moving,
+										~B moving, /*done*/
 										~B moving_back	} 
 									<-
 									print("Achieving plan"),
@@ -739,8 +732,7 @@ findplan[perform]
 +!move_back[achieve]:{B moving} <- do_nothing;
 					  
 +!doMoveBackActions[perform]: {B move_back_list([FAct|TActs]) }
-					<-
-					+!doAction(FAct)[perform],
+					<- +!doAction(FAct)[perform],
 					-move_back_list([FAct|TActs]),
 					+move_back_list(TActs)
 					;
