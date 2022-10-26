@@ -120,21 +120,12 @@ strip_locations_from_specs_wrapper(CSpecs,Locs):-
 strip_locations_from_spec(visit(Loc),[Loc]);
 strip_locations_from_spec(avoid(Loc),[Loc]);
 strip_locations_from_spec(before(Blist),Blist);
-//    append([Locone],[],LocsN),
-//    get_second_location_from_before(before(Locone,Loctwo),Loctwo),
-//    append([Loctwo],LocsN,Locs);
-//    append([Locone],[Loctwo],Locs);
 
 strip_locations_from_specs([],[]);
 strip_locations_from_specs([H | T],LocsN):-
     strip_locations_from_spec(H,SpecLocs),
     strip_locations_from_specs(T,Locs),
     append(SpecLocs,Locs,LocsN);
-//strip_locations_from_specs([avoid(Loc) | T],[Loc | Locs]):-
-//    strip_locations_from_specs(T,Locs);
-//strip_locations_from_specs([before(Locone,Loctwo) | T],[Locone | Locs2]):-
-//    strip_locations_from_specs(T,Locs),
-//    append([Loctwo],Locs,Locs2);
 
 
 // step 2
@@ -146,7 +137,6 @@ get_visit_annotations([],AIndex,Locs,[]);
 get_visit_annotations([move_to(Loc) | T],AIndex,Locs,[visit(Loc,AIndex) | VisitAnnots]):-
     ismember(Loc,Locs),
     next_number(AIndex,NextIndex),
-//    Index1 is Index+1,
     get_visit_annotations(T,NextIndex,Locs,VisitAnnots);
 get_visit_annotations([H | T],AIndex,Locs,VisitAnnots):-
     next_number(AIndex,NextIndex),
@@ -199,9 +189,6 @@ generate_befores_for_plan([before(Blist) | T],VisitsList,[before(Blist) | PlanBe
 generate_befores_for_plan([H | T],VisitsList,PlanBeforesList):-
     generate_befores_for_plan(T,VisitsList,PlanBeforesList);
 
-
-
-
 //just using the knowledge we have
 //generate a befores list from the locations we care about
 before_satisfied(Locone,Loctwo):-
@@ -225,8 +212,6 @@ before_violated(Locone,Loctwo):-
 before_unknown(Locone,Loctwo):-
     ~before_satisfied(Locone,Loctwo),
     ~before_violated(Locone,Loctwo);
-//    ~visited(Locone,Tlone),
-//    ~visited(Loctwo,Tltwo);
 
 avoid_violated(Loc):-
     visited(Loc,Tl);
@@ -276,8 +261,6 @@ generate_all_possible_befores(Loc,[Loc | T],AllBefores):-
     generate_all_possible_befores(Loc,T,AllBefores);
 generate_all_possible_befores(Loc,[H | T],AllBefores):-
     append([Loc],[H],B1),
-//    append([H],[Loc],B2),
-//    create_befores_list(B1,B2,BList),
     generate_all_possible_befores(Loc,T,AllPossibleBefores),
     append([before(B1)],AllPossibleBefores,AllBefores);
 
@@ -314,8 +297,6 @@ get_annotations(UnknownBefores,at(Loc),Actions,Start,Locs,TempVisitAnnots,Before
     get_visit_annotations(Actions,Start,Locs,VisitAnnots),
     append([visit(Loc,0)],VisitAnnots,TempVisitAnnots),
     generate_befores_for_plan(UnknownBefores,TempVisitAnnots,BeforesAnnots);
-//    append(VisitAnnots,BeforesAnnots,Annotations);
-//
 
 gather_allplan_goals_wrapper(Plans,GoalsList):-
     gather_allplan_goals(Plans,NonUniqueGoalsList),
@@ -331,7 +312,6 @@ annotate_all_plans(Start,Locs,AllPossibleBefores,[plan(Goal,Source,Index,Actions
 
 update_before_annotations([],[]);
 update_before_annotations([plan(Goal,at(Loc),Index,Actions,VisitAnnots,OBeforesAnnots) | TPlans],[plan(Goal,at(Loc),Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
-//    append([visit(Loc,0)],VisitAnnots,TempVisitAnnots),
     generate_befores_for_plan(OBeforesAnnots,VisitAnnots,BeforesAnnots),
     update_before_annotations(TPlans,TUpdatedPlans);
 //step 3
@@ -349,7 +329,6 @@ plans_from_loc_with_any_specification(Loc,Specs,[plan(Goal,at(Loc),Index,Actions
     ismember(Goal,Specs),
     plans_from_loc_with_any_specification(Loc,Specs,PlanT,LPlanT);
 plans_from_loc_with_any_specification(Loc,Specs,[plan(Goal,at(Loctwo),Index,Actions,Vannots,Bannots) | PlanT], LPlanT):-
-//    ismember(Goal,Specs),
     plans_from_loc_with_any_specification(Loc,Specs,PlanT,LPlanT);
 
 
@@ -413,9 +392,6 @@ find_valid_plans([H|T],Plans,PossiblePlans):-
 	find_valid_plans(T,NewPlanSet,PossiblePlans);
 
 find_valid_plans([H|T],Plans,PossiblePlans):-
-//    unknown(H),
-//	get_plans_for_spec(H,Plans,PlanSet),
-//	check_plans_for_spec(Plans,PlanSet,NewPlanSet),
 	find_valid_plans(T,Plans,PossiblePlans);
 
 check_plans_for_spec(L,[],L);
@@ -469,9 +445,6 @@ can_violate(near(Loc),[H | T],Rest):-
 // if its a before, we are basically visiting l2 before l1, so we need to add a visit too
 // and then just repeat the before annots for this plan
 // and then just update our plans
-//revise_annotations(Loc,Percept,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
-//revise_annotations(Loc,near(NextLoc),Vannots,Bannots,NewVannots,UpdatedBannots):-
-//revise_annotations(Loc,Percept,Pindex,Vannots,Bannots,UpdatedVannots,UB)
 revise_annotations(Loc,near(NextLoc),CurrentPlanIndex,Vannots,Bannots,FinalVannots,UpdatedBannots):-
 // insert nextloc at current plan index
     next_number(CurrentPlanIndex,IncrementedIndex),
@@ -631,33 +604,25 @@ initial_setup[perform]
                                         +!appendPrint("Violated specs",VSpecs)[perform];
 
 +!get_specifications_status[perform]: {B specification("Combined",Specs),
-//                            B unknown_specs(Specs,USpecs)
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                             ,B specification("Unknown",PrevUSpecs)
                             } <-
                             -specification("Unknown",PrevUSpecs),
                             +specification("Unknown",USpecs),
-                            print("Unknown specs")
-                            ,print(USpecs)
-                            ,print("Satisfied specs")
-                            ,print(SSpecs)
-                            ,print("Violated specs")
-                            ,print(VSpecs)
+                            print("Unknown specs",USpecs)
+                            ,print("Satisfied specs",SSpecs)
+                            ,print("Violated specs",VSpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
 +!get_specifications_status[perform]: {B specification("Combined",Specs),
-//                            B unknown_specs(Specs,USpecs)
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                             ,~B specification("Unknown",PrevUSpecs)
                             } <-
 
                             +specification("Unknown",USpecs),
-                            print("Unknown specs")
-                            ,print(USpecs)
-                            ,print("Satisfied specs")
-                            ,print(SSpecs)
-                            ,print("Violated specs")
-                            ,print(VSpecs)
+                            print("Unknown specs",USpecs)
+                            ,print("Satisfied specs",SSpecs)
+                            ,print("Violated specs",VSpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
 +!do_plans([])[perform] : {True} <- print("I received an empty list of specs so we are all done");
@@ -669,12 +634,10 @@ initial_setup[perform]
                                 ,B find_valid_plans(Pspec,Ng,AvailablePlans,ValidPlans)
                              }
                              <-
-                             print(Ng),
-                             print(Pspec),
+                             print("Specs for plans",Ng,Pspec),
                              +!print_specification_beliefs[perform]
                              ,+!print_not_goals[perform]
-                             ,print("Valid plans")
-                             ,print(ValidPlans),
+                             ,print("Valid plans",ValidPlans),
                              +!choose_first_plan(ValidPlans)[perform]
                              ;
 // once you have valid plans you
@@ -690,15 +653,13 @@ initial_setup[perform]
 
                                         }
                                         <-
-                                        print("Selecting plan")
-                                        ,+!printPlan(Goal,Source,Index,Actions,Vannots,Bannots)[perform]
-                                        ,print(AllNotGoalsList)
+                                        print("Selecting plan ",Goal,Source,Index,Actions,Vannots,Bannots)
+                                        ,print("All goals list ", AllNotGoalsList)
                                         ,+possible_violations(PossibleViolations)
                                         ,+specification("Can violate",CanViolate)
 // so we want to be able to add all the vannots and bannots that are part of our
 // specification and not part of these Vannots to possible violations
-                                        ,print("Possible plan violations")
-                                        ,print(PossibleViolations)
+                                        ,print("Possible plan violations",PossibleViolations)
                                         ,+!achieve_plan(Goal,Source,Index)[achieve]
 
                                         ;
@@ -709,12 +670,10 @@ initial_setup[perform]
 									<-
 					+!printCurrentPlanBelief[perform],
 					+achieve_plan(Goal,Source,Index),
-					print("Removed belief of current plan"),
-					print(Goal),
-					print(Index),
+					print("Removed belief of current plan",Goal,Index),
 					-current_plan(Goal,Source,Index,[]),
 					 +!update_move_history[perform],
-					+!appendPrint("Achieved Plan for ",Goal)[perform],
+					print("Achieved Plan for ",Goal),
 					+!printCurrentPlanBelief[perform],
 					+!get_new_plan[perform];
 //									+!findplan[perform];
@@ -730,9 +689,7 @@ initial_setup[perform]
 +!drop_current_plan[perform]:{B current_plan(Goal,Source,Index,Actions)
                             }
                             <-
-                            print("Dropping current plan "),
-                            print(Goal),
-                            print(index),
+                            print("Dropping current plan ",Goal,index),
                             -current_plan(Goal,Source,Index,Actions),
                             print("Dropping achieve goal too"),
                             -!achieve_plan(Goal,Source,Index)[achieve],
@@ -764,10 +721,7 @@ initial_setup[perform]
 
 +!move_back[achieve]:{B move_back_list([FAct|TActs])
 					  }
-					  <-
-
-					  +!doMoveBackActions[perform];
-
+					  <- +!doMoveBackActions[perform];
 
 +!doMoveBackActions[perform]: {B move_back_list([FAct|TActs]) }
 					<-
@@ -776,18 +730,18 @@ initial_setup[perform]
 					+move_back_list(TActs)
 					;
 // then you can find a new plan
-
 +!drop_can_violate_belief[perform]: {B specification("Can violate",CanViolate)} <- +!appendPrint("Dropping can violate ",CanViolate)[perform], -specification("Can violate",CanViolate);
 +!drop_can_violate_belief[perform]: {~B specification("Can violate",CanViolate)} <- print("No can violate specification belief");
 
-+!drop_possible_violations[perform]: {B possible_violations(OldVs) } <- +!appendPrint("Dropping old plans possible violations",OldVs)[perform],
-                                                                         														-possible_violations(OldVs);
++!drop_possible_violations[perform]: {B possible_violations(OldVs) } <-
+                +!appendPrint("Dropping old plans possible violations",OldVs)[perform],
+                -possible_violations(OldVs);
 +!drop_possible_violations[perform]: {~B possible_violations(OldVs) } <- print("No belief about possible violations");
 
 +!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,PlanActions)
 											}
 									<-
-														+!printCurrentPlanBelief[perform],
+									+!printCurrentPlanBelief[perform],
 									print("In the middle of the plan"),
 									+!update_move_history[perform],
 									+!doActions[perform];
@@ -845,7 +799,6 @@ initial_setup[perform]
 
 +!update_move_history[perform] : {B at(Loc), B move_history(MH), B plan_index(Pindex)}
 							<-
-						//	+!visitedLoc(Loc)[perform],
 						+.lock,
 							+!printMH("Before update ")[perform],
 							-move_history(MH),

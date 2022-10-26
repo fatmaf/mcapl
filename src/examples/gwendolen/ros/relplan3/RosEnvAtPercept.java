@@ -51,23 +51,13 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 		bridge.subscribe(
 				SubscriptionRequestMsg.generate("/move_base/result").setType("move_base_msgs/MoveBaseActionResult"),
-//				.setThrottleRate(1)
-//				.setQueueLength(1),
 				new RosListenDelegate() {
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<MoveBaseActionResult> unpacker = new MessageUnpacker<MoveBaseActionResult>(
 								MoveBaseActionResult.class);
 						MoveBaseActionResult msg = unpacker.unpackRosMessage(data);
 						clearPercepts();
-//					System.out.println("Frame id: "+msg.header.frame_id);
-//					System.out.println("Stamp sec: "+msg.header.stamp.secs);
-//					System.out.println("Seq: "+msg.header.seq);
-//					System.out.println("Goal: "+msg.status.goal_id.id);
-//					System.out.println("Stamp sec: "+msg.status.goal_id.stamp.secs);
-//					System.out.println("Status: "+msg.status.status);
-//					System.out.println("Text: "+msg.status.text);
-//					
-//					System.out.println();
+
 						Literal movebase_result = new Literal("movebase_result");
 						movebase_result.addTerm(new NumberTermImpl(msg.header.seq));
 						movebase_result.addTerm(new NumberTermImpl(msg.status.status));
@@ -77,8 +67,6 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 		bridge.subscribe(SubscriptionRequestMsg.generate("/radiation_sensor_plugin/sensor_0")
 				.setType("gazebo_radiation_plugins/Simulated_Radiation_Msg"),
-//				.setThrottleRate(1)
-//				.setQueueLength(1),
 				new RosListenDelegate() {
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
@@ -103,8 +91,6 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<Vector3> unpacker = new MessageUnpacker<Vector3>(Vector3.class);
 						Vector3 msg = unpacker.unpackRosMessage(data);
-						// AJPFLogger.warning(logname, "Current pose: " + msg.x + " " + msg.y + " " +
-						// msg.z);
 
 						doAt(msg);
 						doNear(msg);
@@ -113,7 +99,17 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 				});
 
 	}
-
+//
+//	void printLotsOfThings(Object ... values)
+//	{
+//		String toprint = "";
+//		for (Object c: values)
+//		{
+//			if (c instanceof String)
+//				toprint+=(String)c;
+//			else if (c instanceof )
+//		}
+//	}
 	String near_predlist_toString()
 	{
 		String toret = "";

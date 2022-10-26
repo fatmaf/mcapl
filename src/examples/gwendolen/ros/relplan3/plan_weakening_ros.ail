@@ -21,11 +21,12 @@
 // http://www.csc.liv.ac.uk/~lad
 //----------------------------------------------------------------------------
 
-mas.file = /src/examples/gwendolen/ros/relplan3/plan_weakening.gwen
+mas.file = /src/examples/gwendolen/ros/relplan3/plan_weakening_ros.gwen
 mas.builder = gwendolen.GwendolenMASBuilder
 
-env = gwendolen.ros.relplan3.MoveEnvWithNear_l6
+env = gwendolen.ros.relplan3.RosEnvAtPercept
 
 log.warning = ail.mas.DefaultEnvironment
 //log.fine = ail.semantics.AILAgent
 //log.fine = ail.syntax.EvaluationAndRuleBaseIterator
+pretty=ail

@@ -1,4 +1,4 @@
-package gwendolen.partialplans.checkalg;
+package gwendolen.ros.relplan3;
 
 import ail.mas.DefaultEnvironment;
 import ail.syntax.Action;
