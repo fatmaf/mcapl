@@ -464,13 +464,13 @@ specs_unknown_satisfied_violated([H|T],[H | UnknownR],SatisfiedR,ViolatedR):-
 // if its an avoid(l1) we can violate if l1 = percept
 // if its a visit we cant really violate it so we cool so far
 can_violate(near(Loc),[],[]);
-can_violate(near(Loc),[before(Bone,Btwo) | TSpecs],[before(Bone,Btwo) | Rest]):-
+can_violate(near(Btwo),[before(Bone,Btwo) | TSpecs],[before(Bone,Btwo) | Rest]):-
 //    parse_before(before(Blist),Bone,Loc),
     ~visited(Bone,Tb),
-    can_violate(near(Loc),TSpecs,Rest);
+    can_violate(near(Btwo),TSpecs,Rest);
 
-can_violate(near(Loc),[before(Bone,Btwo) | TSpecs], Rest):-
-    can_violate(near(Loc),TSpecs,Rest);
+can_violate(near(Btwo),[before(Bone,Btwo) | TSpecs], Rest):-
+    can_violate(near(Btwo),TSpecs,Rest);
 
 can_violate(near(Loc),[avoid(Loc) | TSpecs], [avoid(Loc) | Rest]):-
     can_violate(near(Loc),TSpecs,Rest);
