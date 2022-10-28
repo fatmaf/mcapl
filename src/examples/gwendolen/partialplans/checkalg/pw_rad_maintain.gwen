@@ -556,7 +556,7 @@ initial_setup[perform]
 
 
 +!print_inc_belief(Index)[perform] : {B max_plan_len(Index)} <- do_nothing;
-+!print_inc_belief(Index)[perform]: {B next_number(Index,Index1), ~B max_plan_len(Index)} <- print("Next number"),print(Index),print(Index1),+!print_inc_belief(Index1)[perform];
++!print_inc_belief(Index)[perform]: {B next_number(Index,Index1), ~B max_plan_len(Index)} <- print("DEBUG   ","Print next number   ","Next number"),print("DEBUG   ","Print next number   ",Index),print("DEBUG   ","Print next number   ",Index1),+!print_inc_belief(Index1)[perform];
 
 // SPECIFICATIONS
 // required and preferred
@@ -622,20 +622,21 @@ initial_setup[perform]
                                     +!print_specification_belief("Preferred")[perform],
                                     +!print_specification_belief("Combined")[perform],
                                     +!print_specification_belief("Goals")[perform];
-+!print_not_goals[perform]: {B specification("Required","not goals",Ng), B locations_of_interest(Locs)} <- print("Req not goals"),print(Ng), print("Locs of interest"), print(Locs);
++!print_not_goals[perform]: {B specification("Required","not goals",Ng), B locations_of_interest(Locs)}
+ <- print("DEBUG  ","Print not goals   ","Req not goals",Ng), print("DEBUG  ","Print not goals   ","Locs of interest",Locs);
 
-+!print_specification_belief(SName)[perform]: {B specification(SName,Spec)} <- print(SName," ",Spec);
-+!print_specification_belief(SName)[perform]: {~B specification(SName,Spec)} <- print(SName," does not exist");
++!print_specification_belief(SName)[perform]: {B specification(SName,Spec)} <- print("DEBUG  ","Print spec belief   ",SName," ",Spec);
++!print_specification_belief(SName)[perform]: {~B specification(SName,Spec)} <- print("DEBUG  ","Print spec belief   ",SName," does not exist");
 // Generating befores
 +!generate_befores[perform]: {B locations_of_interest(Locs),
                               B generate_befores_from_beliefs(Locs,UnknownBefores,SatisfiedBefores,ViolatedBefores,AllPossibleBefores)  }
                               <- +specification("befores","unknown",UnknownBefores),
                               +specification("befores","satisfied",SatisfiedBefores),
                               +specification("befores","violated",ViolatedBefores),
-                              +!appendPrint("Befores u",UnknownBefores)[perform],
-                              +!appendPrint("Befores s",SatisfiedBefores)[perform],
-                              +!appendPrint("Befores v",ViolatedBefores)[perform],
-                              +!appendPrint("All possible befores",AllPossibleBefores)[perform];
+                              print("DEBUG  ","generate befores   ","Befores u",UnknownBefores),
+                              print("DEBUG  ","generate befores   ","Befores s",SatisfiedBefores),
+                              print("DEBUG  ","generate befores   ","Befores v",ViolatedBefores),
+                              print("DEBUG  ","generate befores   ","All possible befores",AllPossibleBefores);
 
 /**************************************************************/
 // annotating plans
@@ -648,8 +649,8 @@ initial_setup[perform]
                                   }
                                   <-
 
-                                  +!appendPrint("Old plans",Plans)[perform],
-                                  +!appendPrint("Annotated plans",AnnotatedPlans)[perform],
+                                  print("DEBUG   ","add plan annotations   ","Old plans",Plans),
+                                  print("DEBUG   ","add plan annotations   ","Annotated plans",AnnotatedPlans),
                                   -plans(Plans),
                                   +plans(AnnotatedPlans),
                                   +initial_setup_complete;
@@ -669,11 +670,9 @@ initial_setup[perform]
 +!update_visit_annotations_for_loc_action(Loc)[perform]:
                         { B plans(Plans), B initial_setup_complete
                         , B update_visit_annotations(Loc,Plans,UpdatedPlans)
-                            }         <-       print("IN UPDATE VISIT ANNOTS Old plans",Plans),
-                                       print("IN UPDATE VISIT ANNOTS Loc ",Loc)
-                                       , print("IN UPDATE VISIT ANNOTS Updated plans",UpdatedPlans)
-//                                                                                                           -plans(Plans),
-//                                                                                                           +plans(UpdatedPlans)
+                            }         <-       print("DEBUG   ","Update visit annots for loc   "," Old plans",Plans),
+                                       print("DEBUG   ","Update visit annots for loc   "," Loc ",Loc)
+                                       , print("DEBUG   ","Update visit annots for loc   "," Updated plans",UpdatedPlans)
 ;
 
 +!update_before_annotations_action[perform]: {
@@ -681,10 +680,8 @@ initial_setup[perform]
                                                                   ,B initial_setup_complete
                                                                    ,B update_before_annotations(Plans,UpdatedPlans)}
                                                                    <-
-                                                                   print("Old plans"),
-                                                                   print(Plans),
-                                                                   print("Updated plans"),
-                                                                   print(UpdatedPlans),
+                                                                   print("DEBUG   ","update before annotations   ","Old plans",Plans),
+                                                                   print("DEBUG   ","update before annotations   ","Updated plans ",UpdatedPlans),
                                                                    -plans(Plans),
                                                                    +plans(UpdatedPlans);
 
@@ -698,22 +695,18 @@ initial_setup[perform]
                                 ,B plans(Plans)
                                 ,B plans_from_loc_with_any_specification(Loc,Specs,Plans,AvailablePlans)}
                                 <-
-                                print("at"),
-                                print(Loc),
-                                print("Combined specs"),
-                                print(Specs),
-                                print("Plans"),
-                                print(Plans),
-                                print("Available plans"),
-                                print(AvailablePlans),
+                                print("DEBUG   get available plans   ","at ",Loc),
+                                print("DEBUG   get available plans   ","Combined specs ",Specs),
+                                print("DEBUG   get available plans   ","Plans",Plans),
+                                print("DEBUG   get available plans   ","Available plans",AvailablePlans),
                                 +!find_valid_plans_action(AvailablePlans)[perform];
 
 +!print_specification_status[perform]: {
                                     B specification("Combined",Specs),                                            B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                                         }   <-
-                                        +!appendPrint("Unknown specs",USpecs)[perform],
-                                        +!appendPrint("Satisfied specs",SSpecs)[perform],
-                                        +!appendPrint("Violated specs",VSpecs)[perform];
+                                        print("DEBUG   print spec status   ","Unknown specs",USpecs),
+                                        print("DEBUG   print spec status   ","Satisfied specs",SSpecs),
+                                        print("DEBUG   print spec status   ","Violated specs",VSpecs);
 
 +!get_specifications_status[perform]: {B specification("Combined",Specs),
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
@@ -721,12 +714,9 @@ initial_setup[perform]
                             } <-
                             -specification("Unknown",PrevUSpecs),
                             +specification("Unknown",USpecs),
-                            print("Unknown specs")
-                            ,print(USpecs)
-                            ,print("Satisfied specs")
-                            ,print(SSpecs)
-                            ,print("Violated specs")
-                            ,print(VSpecs)
+                            print("DEBUG   get spec status   ","Unknown specs",USpecs)
+                            ,print("DEBUG   get spec status   ","Satisfied specs",SSpecs)
+                            ,print("DEBUG   get spec status   ","Violated specs",VSpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
 +!get_specifications_status[perform]: {B specification("Combined",Specs),
@@ -735,16 +725,13 @@ initial_setup[perform]
                             } <-
 
                             +specification("Unknown",USpecs),
-                            print("Unknown specs")
-                            ,print(USpecs)
-                            ,print("Satisfied specs")
-                            ,print(SSpecs)
-                            ,print("Violated specs")
-                            ,print(VSpecs)
+                            print("DEBUG   get spec status   ","Unknown specs",USpecs)
+                            ,print("DEBUG   get spec status   ","Satisfied specs",SSpecs)
+                            ,print("DEBUG   get spec status   ","Violated specs",VSpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
-+!do_plans([])[perform] : {True} <- print("I received an empty list of specs so we are all done");
-+!do_plans(USpecs)[perform]:{True} <- print("I received the following"), print(USpecs),
++!do_plans([])[perform] : {True} <- print("DEBUG   do plans   ","I received an empty list of specs so we are all done");
++!do_plans(USpecs)[perform]:{True} <- print("DEBUG   do plans   ","I received the following",USpecs),
                             +!get_available_plans[perform];
 +!find_valid_plans_action(AvailablePlans)[perform]: {
                                 B specification("Required","not goals",Ng)
@@ -752,19 +739,18 @@ initial_setup[perform]
                                 ,B find_valid_plans(Pspec,Ng,AvailablePlans,ValidPlans)
                              }
                              <-
-                             print(Ng),
-                             print(Pspec),
+                             print("DEBUG   find valid plans   ","Finding plans for ",Ng,Pspec)
+                             ,
                              +!print_specification_beliefs[perform]
                              ,+!print_not_goals[perform]
-                             ,print("Valid plans")
-                             ,print(ValidPlans),
+                             ,print("DEBUG   find valid plans   ","Valid plans",ValidPlans),
                              +!choose_first_plan(ValidPlans)[perform]
                              ;
 // once you have valid plans you
 // choose a plan and add all the annotations from that plan
 // that you care about i.e. the ones in your specifications
 // to a possible violations list
-+!choose_first_plan([])[perform]: {True} <- print("No valid plans so we are all done"), +!print_specification_status[perform];
++!choose_first_plan([])[perform]: {True} <- print("DEBUG   choose first plan   ","No valid plans so we are all done"), +!print_specification_status[perform];
 +!choose_first_plan(ValidPlans)[perform]: {B get_first_plan(ValidPlans,plan(Goal,Source,Index,Actions,Vannots,Bannots))
                                             ,B specification("Not goals",AllNotGoalsList)
                                             ,B specs_in_not_goals_not_satisfied(AllNotGoalsList,Vannots,Bannots,PossibleViolations)
@@ -773,15 +759,14 @@ initial_setup[perform]
 
                                         }
                                         <-
-                                        print("Selecting plan")
+                                        print("DEBUG   choose first plan   ","Selecting plan")
                                         ,+!printPlan(Goal,Source,Index,Actions,Vannots,Bannots)[perform]
-                                        ,print(AllNotGoalsList)
+                                        ,print("DEBUG   choose first plan   ","All not goals list ",AllNotGoalsList)
                                         ,+possible_violations(PossibleViolations)
                                         ,+specification("Can violate",CanViolate)
 // so we want to be able to add all the vannots and bannots that are part of our
 // specification and not part of these Vannots to possible violations
-                                        ,print("Possible plan violations")
-                                        ,print(PossibleViolations)
+                                        ,print("DEBUG   choose first plan   ","Possible plan violations",PossibleViolations)
                                         ,+!achieve_plan(Goal,Source,Index)[achieve]
 
                                         ;
@@ -806,9 +791,9 @@ initial_setup[perform]
                             <-
                             +moving_back,
                             +stop_plan,
-                            print("Dropping current plan ",Goal,Index),
+                            print("DEBUG   stop plan   ","Dropping current plan ",Goal,Index),
                             -current_plan(Goal,Source,Index,Actions),
-                            print("Dropping achieve goal too"),
+                            print("DEBUG   stop plan   ","Dropping achieve goal too"),
                             -!achieve_plan(Goal,Source,Index)[achieve],
                             +!move_back[achieve];
 
@@ -816,13 +801,13 @@ initial_setup[perform]
                     ~B moving, ~B moving_back, ~B cancelled_goal}
                     <-
                     +moving_back,
-                    print("Stopping plan not moving"),
+                    print("DEBUG   stop plan   ","Stopping plan not moving"),
                     -!achieve_plan(Goal,Source,Index)[achieve],
                     -current_plan(Goal,Source,Index,Actions),
                     +!move_back[achieve];
 +!stop_plan[achieve]: {~B current_plan(Goal,Source,Index,Actions),
                         ~B moving_back, ~B moving, ~B cancelled_goal}
-                        <- +moving_back, +stop_plan, print("Stopping plan with no current plan"), +!move_back[achieve];
+                        <- +moving_back, +stop_plan, print("DEBUG   stop plan   ","Stopping plan with no current plan"), +!move_back[achieve];
 
 +!stop_plan[achieve]: { B current_plan(Goal,Source,Index,Actions) ,
                         B moving,
@@ -833,7 +818,7 @@ initial_setup[perform]
 +!stop_plan[achieve]: {B moving_back, B moving} <- do_nothing;
 +!stop_plan[achieve]:{True} <-  do_nothing;
 
-+!send_cancel_goal[perform]: {B moving} <- +.lock, cancel_goal, +cancelled_goal, +cancelled_goal_not_done, print("Sent goal cancel request"), -.lock;
++!send_cancel_goal[perform]: {B moving} <- +.lock, cancel_goal, +cancelled_goal, +cancelled_goal_not_done, print("DEBUG   send cancel goal   ","Sent goal cancel request"), -.lock;
 
 // send a stop moving signal
 // once youve stopped moving
@@ -842,7 +827,7 @@ initial_setup[perform]
 					  ~B move_back_list(MBL)
 					  ,~B moving}
 					  <-
-					  print("Moving back for the first time"),
+					  print("DEBUG   move back   ","Moving back for the first time"),
 					  +move_back_list([FAct|TActs]),
 					  +!doMoveBackActions[perform];
 
@@ -851,7 +836,7 @@ initial_setup[perform]
 +!move_back[achieve]:{B move_back_list([]), ~B moving
 					  }
 					  <-
-					  print("Moved back"),
+					  print("DEBUG   move back   ","Moved back"),
 					  -move_back_list([]),
 					  +move_back,
 					  -cancelled_goal,
@@ -862,23 +847,23 @@ initial_setup[perform]
 
 +!move_back[achieve]:{B move_back_list([FAct|TActs]), ~B moving
 					  }
-					  <-  print("Doing moveback actions"),+!doMoveBackActions[perform];
+					  <-  print("DEBUG   move back   ","Doing moveback actions"),+!doMoveBackActions[perform];
 +!move_back[achieve]: {B moving} <- do_nothing;
 +!doMoveBackActions[perform]: {B move_back_list([FAct|TActs]) }
 					<-
-					print("Moving back ",FAct),
+					print("DEBUG   move back   ","Moving back ",FAct),
 					+!doAction(FAct)[perform],
 					-move_back_list([FAct|TActs]),
 					+move_back_list(TActs)
 					;
 // then you can find a new plan
-+!drop_can_violate_belief[perform]: {B specification("Can violate",CanViolate)} <- print("Dropping can violate ",CanViolate), -specification("Can violate",CanViolate);
-+!drop_can_violate_belief[perform]: {~B specification("Can violate",CanViolate)} <- print("No can violate specification belief");
++!drop_can_violate_belief[perform]: {B specification("Can violate",CanViolate)} <- print("DEBUG   drop can violate belief   ","Dropping can violate ",CanViolate), -specification("Can violate",CanViolate);
++!drop_can_violate_belief[perform]: {~B specification("Can violate",CanViolate)} <- print("DEBUG   drop can violate belief   ","No can violate specification belief");
 
 +!drop_possible_violations[perform]: {B possible_violations(OldVs) } <-
-                print("Dropping old plans possible violations",OldVs),
+                print("DEBUG   drop possible violations   ","Dropping old plans possible violations",OldVs),
                 -possible_violations(OldVs);
-+!drop_possible_violations[perform]: {~B possible_violations(OldVs) } <- print("No belief about possible violations");
++!drop_possible_violations[perform]: {~B possible_violations(OldVs) } <- print("DEBUG   drop possible violations   ","No belief about possible violations");
 
 
 // then you set about achieving the plan
@@ -889,17 +874,17 @@ initial_setup[perform]
 									<-
 					+!printCurrentPlanBelief[perform],
 					+achieve_plan(Goal,Source,Index),
-					print("Removed belief of current plan",Goal,Index),
+					print("DEBUG   achieve plan   ","Removed belief of current plan",Goal,Index),
 					-current_plan(Goal,Source,Index,[]),
 					 +!update_move_history[perform],
-					print("Achieved Plan for ",Goal),
+					print("DEBUG   achieve plan   ","Achieved Plan for ",Goal),
 					+!printCurrentPlanBelief[perform],
 					+!get_new_plan[perform];
 
 +!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back } /*done*/
 									<-
 									+!printCurrentPlanBelief[perform],
-									print("In the middle of the plan"),
+									print("DEBUG   achieve plan   ","In the middle of the plan"),
 									+!update_move_history[perform],
 									+!doActions[perform];
 
@@ -909,7 +894,7 @@ initial_setup[perform]
 											} /*done*/
 									<-
 									+!printCurrentPlanBelief[perform],
-									print("Adding a new plan"),
+									print("DEBUG   achieve plan   ","Adding a new plan"),
 									+current_plan(Goal,Source,Index,Actions),
 									+.lock,
 									+!reset_move_history[perform],
@@ -920,20 +905,19 @@ initial_setup[perform]
 +!achieve_plan(Goal,Source,Index)[achieve]: {True} <- printstate;
 +!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
 					<-
-					print("Performing action ",FirstAction),
+					print("DEBUG   achieve plan   ","Performing action ",FirstAction),
 					+!doAction(FirstAction)[perform],
 					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
 					+current_plan(Goal,Source,Index,ActionsTail),
-					print("Added new action set ",ActionsTail),
+					print("DEBUG   achieve plan   ","Added new action set ",ActionsTail),
 					+!printCurrentPlanBelief[perform]
 					;
-+!printCurrentPlanBelief[perform]: {B current_plan(Goal,Source,Index,Actions)} <- print("I believe that the current plan has",Goal,Source,Index,Actions,"Done printing current plan"),+!printMoveHistory[perform];
-+!printCurrentPlanBelief[perform]: {~B current_plan(Goal,Source,Index,Actions)} <- print("I believe that there is no current plan"),+!printMoveHistory[perform];
-+!printMoveHistory[perform] : {B move_history(MH)} <- print("Move history",MH);
-+!printMoveHistory[perform] : {~B move_history(MH)} <- print("No Move history");
++!printCurrentPlanBelief[perform]: {B current_plan(Goal,Source,Index,Actions)} <- print("DEBUG   print current belief   ","I believe that the current plan has",Goal,Source,Index,Actions,"Done printing current plan"),+!printMH[perform];
++!printCurrentPlanBelief[perform]: {~B current_plan(Goal,Source,Index,Actions)} <- print("DEBUG   print current belief   ","I believe that there is no current plan"),+!printMH[perform];
+
 +!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
 					<-
-					print("Performing action ",FirstAction),
+					print("DEBUG   do actions   ","Performing action ",FirstAction),
 					+!doAction(FirstAction)[perform],
 					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
 					+current_plan(Goal,Source,Index,ActionsTail)
@@ -941,28 +925,28 @@ initial_setup[perform]
 
 +!doAction(move_to(Loc))[perform]: {~B going(L1), ~B moving, ~B at(Loc), B location_coordinate(Loc,X,Y,Z)
                                     } <-
-							print("moving to ",Loc), +going(Loc), +moving, move_to(Loc);
+							print("DEBUG   do action   ","moving to ",Loc), +going(Loc), +moving, move_to(Loc);
 
-+!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("already at",Loc);
++!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("DEBUG   do action   ","already at",Loc);
 
 +!doAction(move_to(Loc))[perform]: {B moving} <- do_nothing;
 
 +!reset_move_history[perform]: {B move_history(MH), B plan_index(Pindex)} <- -move_history(MH),+move_history([]),-plan_index(Pindex),+plan_index(0);
 
 +!update_move_history[perform] : {~B at(Loc), B move_history(MH)}
-							<- print("isnt anywhere");
+							<- print("DEBUG   update move history   ","isnt anywhere");
 
 +!update_move_history[perform] : {B at(Loc), B move_history(MH), B plan_index(Pindex)}
 							<-
 						+.lock,
 						+!visitedLoc(Loc)[perform],
-					    +!printMH("Before update ")[perform],
+					    +!printMH("DEBUG   update move history   Before update ")[perform],
 						-move_history(MH),
 						+move_history([move_to(Loc) | MH]),
 						sum(Pindex,1,PindexOne),
 						-plan_index(Pindex),
 						+plan_index(PindexOne),
-						+!printMH("After update ")[perform],
+						+!printMH("DEBUG update move history   After update ")[perform],
 						-.lock;
 
 
@@ -970,15 +954,15 @@ initial_setup[perform]
 +!doneMove(Loc)[perform]: {B moving, B going(Loc)}
 							<-
 							-going(Loc),
-							print("done move"),  -moving;
+							print("DEBUG   done move   ","done move"),  -moving;
 +at(Loc): {True} <-
 			+.lock,
-			print("at ",Loc),
+			print("DEBUG   at  ","at ",Loc),
 			+!visitedLoc(Loc)[perform],
-//			+!visitedLoc(Loc)[perform], +!doneMove(Loc)[perform], +!appendPrint("Visited ",Loc)[perform],
+//			+!visitedLoc(Loc)[perform], +!doneMove(Loc)[perform], print("DEBUG   ","Visited ",Loc),
 			-.lock;
 
-//-at(Loc): {True} <- +!appendPrint("Removed percept for at ",Loc)[perform];
+//-at(Loc): {True} <- print("DEBUG   ","Removed percept for at ",Loc);
 +!visitedLoc(Loc)[perform] : {B location_count(C), ~B visited(Loc,C)}
 						<-
 						+visited(Loc,C), -location_count(C), sum(C,1,NewC), +location_count(NewC);
@@ -986,87 +970,70 @@ initial_setup[perform]
 
 +movebase_result(Id,3) : { B moving, B going(Loc) } <-
 
-						print("Movement to location "),
-						print(Loc),
-						print(" ended with success."),
-							+!appendPrint("movebase id ",Id)[perform],
+						print("DEBUG   movebase result 3   ","Movement to location ",Loc," ended with success ","movebase id ",Id),
 						+!move_cleanup[perform];
 +movebase_result(Id,3) : {True} <- printstate;
 +movebase_result(Id,0) : { B moving, B going(Loc) } <-
-						+!appendPrint("moving to ",Loc)[perform],
-						+!appendPrint("movebase id ",Id)[perform],
-						print("The goal is pending");
+						print("DEBUG   movebase result 0   ","moving to ",Loc,"movebase id ",Id,"The goal is pending");
 
 
 +movebase_result(Id,2) : { B moving, B going(Loc) } <-
-						+!appendPrint("moving to ",Loc)[perform],
-						+!appendPrint("movebase id ",Id)[perform],
-						print("The goal has been cancelled so just clean up"),
+						print("DEBUG   movebase result 2   ","moving to ",Loc,"movebase id ",Id,"The goal has been cancelled so just clean up"),
 //						printstate,
 						+!move_cleanup[perform];
 
 +movebase_result(Id,1) : { B moving, B going(Loc) } <-
-						+!appendPrint("moving to ",Loc)[perform],
-						+!appendPrint("movebase id ",Id)[perform],
-						print("The goal is being processed");
+						print("DEBUG   movebase result 1   ","moving to ",Loc,"movebase id ",Id,"The goal is being processed");
 
 +movebase_result(Id,4) : { B moving, B going(Loc) } <-
-						print("moving to ",Loc),
-						print("movebase id ",Id),
-						print("The goal has been aborted the robot got stuck so just clean up"),
+						print("DEBUG   ","moving to ",Loc),
+						print("DEBUG   ","movebase id ",Id),
+						print("DEBUG   ","The goal has been aborted the robot got stuck so just clean up"),
 						+!move_cleanup[perform];
 
 +movebase_result(Id,5) : { B moving, B going(Loc) } <-
-						print("moving to ",Loc),
-						print("movebase id ",Id),
-						print("The goal has been rejected bad goal so just clean up"),
+						print("DEBUG   movebase result 5   ","moving to ",Loc,"movebase id ",Id,"The goal has been rejected bad goal so just clean up"),
 						+!move_cleanup[perform];
 
 +movebase_result(Id,6) : { B moving, B going(Loc) } <-
-						print("moving to ",Loc),
-						print("movebase id ",Id),
-						print("The goal received a cancel request");
+						print("DEBUG   movebase result 6   ","moving to ",Loc,"movebase id ",Id,"The goal received a cancel request");
 
 +movebase_result(Id,7) : { B moving, B going(Loc) } <-
-						+!appendPrint("moving to ",Loc)[perform],
-						+!appendPrint("movebase id ",Id)[perform],
-						print("The goal received a cancel request");
+						print("DEBUG   movebase result 7   ","moving to ",Loc,"movebase id ",Id,"The goal received a cancel request");
 
 +movebase_result(Id,8) : { B moving, B going(Loc) } <-
-						+!appendPrint("moving to ",Loc)[perform],
-						+!appendPrint("movebase id ",Id)[perform],
-						print("The goal has been recalled so just clean up"),
+						print("DEBUG   movebase result 8   ","moving to ",Loc,"movebase id ",Id,"The goal has been recalled so just clean up"),
 						+!move_cleanup[perform];
 
 
 +!move_cleanup[perform]: {B moving, B going(Loc), B cancelled_goal_not_done } <-
 						+.lock,
-						print(" we did not visit the location because we cancelled the goal in time"),
+						print("DEBUG   move cleanup   "," we did not visit the location because we cancelled the goal in time"),
 						-cancelled_goal_not_done,
 						+!doneMove(Loc)[perform],
 
 						-.lock;
 +!move_cleanup[perform]: {B moving, B going(Loc), ~B cancelled_goal_not_done } <-
 						+.lock,
-						print(" will just assume we got there"),
+						print("DEBUG   move clean up    "," will just assume we got there"),
 //						+!visitedLoc(Loc)[perform],
 						+!doneMove(Loc)[perform],
 						-.lock;
 					//	+!stop_plan(Loc)[perform];
 
-+!move_cleanup[perform]: {~B moving, ~B going(Loc) } <- print("move clean up called for no reason");
++!move_cleanup[perform]: {~B moving, ~B going(Loc) } <- print("DEBUG   move clean up   ","move clean up called for no reason");
 
 +!visitedLoc(Loc)[perform] : {B location_count(C), B visited(Loc,Cy)} //this is different from what I have but I think its fine, well is it? no its not so i'm chaning it
-						<- print("already visited this location so not adding it");
-//						+!appendPrint("Visited loc before",Loc)[perform], +!appendPrint("At step",Cy)[perform], +!appendPrint("Current count",C)[perform],
+						<- print("DEBUG   visited loc   ","already visited this location so not adding it");
+//						print("DEBUG   ","Visited loc before",Loc), print("DEBUG   ","At step",Cy), print("DEBUG   ","Current count",C),
 //						+visited(Loc,C), -location_count(C), sum(C,1,NewC), +location_count(NewC);
 
 +near(Loc): {B radiation(low) } <-
-					print("Near ", Loc," with low radiation"),
+					print("DEBUG   near loc   ","Near ", Loc," with low radiation"),
 					 +!get_violations(near(Loc))[perform]
 					;
 +near(Loc): {~B radiation(low),B radiation(RadVal)} <-
-					print("Near ", Loc," with ",RadVal," radiation "),
+					print("DEBUG   near loc    ","Near ", Loc," with ",RadVal," radiation "),
 					+.lock,
 					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
 //					+!update_visit_annotations_for_loc_action(Loc)[perform],
@@ -1079,15 +1046,15 @@ initial_setup[perform]
                                 B specification("Can violate",Specs)
                             ,B can_violate(Percept,Specs,CouldViolateSpecs)
                             } <-
-                            print(Percept," could violate ",CouldViolateSpecs, " from ", Specs),
+                            print("DEBUG   get violations   ",Percept," could violate ",CouldViolateSpecs, " from ", Specs),
                             +!stop_current_plan(Percept,CouldViolateSpecs)[perform];
 
 +!get_violations(Percept)[perform]: {
                                 B violation_detected
                             } <-
                            do_nothing;
- +!stop_current_plan(Percept,[])[perform]: {True} <- print("No violations possible so not stopping the plan");
- +!stop_current_plan(Percept,CouldViolateSpecs)[perform]: {True} <- print("Stop plan"), +violation_detected, print("Need to update the specification for this plan"),
+ +!stop_current_plan(Percept,[])[perform]: {True} <- print("DEBUG  stop current plan   ","No violations possible so not stopping the plan");
+ +!stop_current_plan(Percept,CouldViolateSpecs)[perform]: {True} <- print("DEBUG   stop current plan   ","Stop plan"), +violation_detected, print("DEBUG   stop current plan   ","Need to update the specification for this plan"),
                                                 +!revise_annotations_action(Percept)[perform];
 +!revise_annotations_action_property(near(OtherLoc))[perform]:{
   B current_plan(Goal,Source,Index,Actions),
@@ -1098,17 +1065,15 @@ initial_setup[perform]
                                                           }
                                                           <-
                                                           +.lock,
-                                                          print("Revising annotations"),
+                                                          print("DEBUG   revise annotations property   ","Revising annotations"),
                                                           +!printPlan(Goal,Source,Index,AllActions,Vannots,Bannots)[perform],
-                                                          +!appendPrint("At loc ",Loc)[perform]
-                                                          ,+!appendPrint("Current plan ",Goal)[perform]
-                                                          ,print(Source)
-                                                          ,print(Index)
-                                                          ,+!appendPrint("Percept ",near(OtherLoc))[perform]
-                                                          ,print("Updated"),
-                                                          +!appendPrint("Plan index",Pindex)[perform],
-                                                          +!appendPrint("Updated Vannots",UpdatedVannots)[perform],
-                                                          +!appendPrint("Updated Bannots",UpdatedBannots)[perform],
+                                                          print("DEBUG   revise annotations property   ","At loc ",Loc)
+                                                          ,print("DEBUG   revise annotations property   ","Current plan ",Goal,Source,Index)
+                                                          ,print("DEBUG   revise annotations property   ","Percept ",near(OtherLoc))
+                                                          ,print("DEBUG   revise annotations property   ","Updated"),
+                                                          print("DEBUG   revise annotations property   ","Plan index",Pindex),
+                                                          print("DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
+                                                          print("DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
                                                           +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                                                           +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                                                         -.lock
@@ -1124,17 +1089,15 @@ initial_setup[perform]
                                                           }
                                                           <-
                                                           +.lock,
-                                                          print("Revising annotations"),
+                                                          print("DEBUG   revise annotations   ","Revising annotations"),
                                                           +!printPlan(Goal,Source,Index,AllActions,Vannots,Bannots)[perform],
-                                                          +!appendPrint("At loc ",Loc)[perform]
-                                                          ,+!appendPrint("Current plan ",Goal)[perform]
-                                                          ,print(Source)
-                                                          ,print(Index)
-                                                          ,+!appendPrint("Percept ",Percept)[perform]
-                                                          ,print("Updated"),
-                                                          +!appendPrint("Plan index",Pindex)[perform],
-                                                          +!appendPrint("Updated Vannots",UpdatedVannots)[perform],
-                                                          +!appendPrint("Updated Bannots",UpdatedBannots)[perform],
+                                                          print("DEBUG   revise annotations   ","At loc ",Loc)
+                                                          ,print("DEBUG   revise annotations   ","Current plan ",Goal,Source,Index)
+                                                          ,print("DEBUG   revise annotations   ","Percept ",Percept)
+                                                          ,print("DEBUG   revise annotations   ","Updated"),
+                                                          print("DEBUG   revise annotations   ","Plan index",Pindex),
+                                                          print("DEBUG   revise annotations   ","Updated Vannots",UpdatedVannots),
+                                                          print("DEBUG   revise annotations   ","Updated Bannots",UpdatedBannots),
                                                           +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                                                           +!update_plan_in_plans(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                                                         -.lock
@@ -1144,9 +1107,9 @@ initial_setup[perform]
                                     B plans(Plans),
                                     B replace_plan_annots_in_plans_revise_for_loc(Loc,Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                     }    <-
-                                            print("Updating violated annots Dropping old plans ",Plans),
+                                            print("DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
                                            -plans(Plans),
-                                           print("Updating violated annots Adding new plans ",NewPlans),
+                                           print("DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                                            +plans(NewPlans),
                                            +!stop_plan[achieve]
                                       ;
@@ -1154,9 +1117,9 @@ initial_setup[perform]
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
                             B plans(Plans),   B replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                                                                } <-
-                                                                               print("Updating violated annots Dropping old plans ",Plans),
+                                                                               print("DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
                                                                                -plans(Plans),
-                                                                               print("Updating violated annots Adding new plans ",NewPlans),
+                                                                               print("DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                                                                                +plans(NewPlans),
                                                                                +!stop_plan[achieve]
                                                                               ;
@@ -1164,28 +1127,25 @@ initial_setup[perform]
 
 +!initial_setup[perform]: {True} <-
                             +.lock,
-                            print("Initialising helper beliefs"),
+                            print("DEBUG   initial setup   ","Initialising helper beliefs"),
                             +!add_helper_beliefs[perform],
-                            print("Helper beliefs initialised"),
-                            print("Annotating plans"),
+                            print("DEBUG   initial setup   ","Helper beliefs initialised"),
+                            print("DEBUG   initial setup   ","Annotating plans"),
                             +!add_plan_annotations_action [perform],
                             +!get_specifications_status[perform],
                             -.lock;
 
-+!printBeliefPlans[perform] : {B plans(Plans)} <- print("Plans",Plans);
++!printBeliefPlans[perform] : {B plans(Plans)} <- print("DEBUG   print plan beliefs   ","Plans",Plans);
 //test reasoning rules here
-+!test_revise_annotations[perform]:{B revise_annotations(l3,near(l6),2,[visit(l3,0),visit(l5,3)],[before(l5,l6),before(l3,l5)],UpdatedVannots,UpdatedBannots)
-                            } <-
-                                 print("Updated V Annotations",UpdatedVannots),
-                                print("Updated B Annotations",UpdatedBannots);
 
-						
+
++!printMH[perform]:{True} <- +!printMH("DEBUG   print MH   ")[perform];
 +!printMH(PrefixText)[perform] : {
                                 B move_history(MH), B plan_index(Pindex)
                                    } <-
 							append(PrefixText," MH ", Text),
-							+!appendPrint(Text,MH)[perform],
-							+!appendPrint("Plan Index ",Pindex)[perform];
+							print("DEBUG   print MH   ",Text,MH),
+							print("DEBUG   print MH   ","Plan Index ",Pindex);
 
 +!appendPrint(PString,PVar)[perform] : {True} <- 
 							 +.lock,
@@ -1214,7 +1174,7 @@ initial_setup[perform]
 					append(PG," ",PPG),
 					append(PPG,P4,PP4),
 					append(PP4,PP2,PP3),
-					print(PP3),
+					print("DEBUG  print plan    ",PP3),
 					-.lock;						
 									
 									
