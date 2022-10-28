@@ -59,7 +59,7 @@ plans([
 
 
 //specifications
-original_specification("Required",[visit(l1),maintain(radiation(low))])
+original_specification("Required",[visit(l1),visit(l3),visit(l5),maintain(radiation(low))])
 original_specification("Preferred",[before(l1,l3),before(l1,l5),avoid(l6)])
 
 max_plan_len(20)
