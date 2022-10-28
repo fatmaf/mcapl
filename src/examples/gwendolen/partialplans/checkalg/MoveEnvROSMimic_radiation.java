@@ -59,12 +59,16 @@ public class MoveEnvROSMimic_radiation extends DefaultEnvironment {
 			// adding the near percept
 			// when we get to l4 we realise that we are "near l6"
 			if (moveloc.equalsIgnoreCase("l8")) {
-				addPercept(get_radiation_pred("medium"));
+				Predicate newradpred= get_radiation_pred("medium");
+				addPercept(newradpred);
+				addPercept(nearloc);
+				System.out.println("Added "+newradpred.toString());
 
 			} else {
 				// it might be there already and we might have to remove it
 				// putting this in move because that is what decides it
 				addPercept(default_radpercept);
+				System.out.println("Added "+default_radpercept.toString());
 			}
 			Predicate mbres = new Predicate("movebase_result");
 			mbres.addTerm(new Predicate(moveloc));

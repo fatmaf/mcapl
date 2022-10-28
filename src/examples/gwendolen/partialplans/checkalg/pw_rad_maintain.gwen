@@ -5,6 +5,7 @@ GWENDOLEN
 :Initial Beliefs:
 
 //locations
+location(l0)
 location(l1)
 location(l2)
 location(l3)
@@ -19,6 +20,7 @@ location(l11)
 
 
 //location coordinates
+location_coordinate(l0,0,0,0)
 location_coordinate(l1,0,0,0)
 location_coordinate(l2,0,0,0)
 location_coordinate(l3,0,0,0)
@@ -45,7 +47,7 @@ plan_index(0)
 
 plans([
         plan(visit(l1),at(l0),1, [move_to(l7),move_to(l8),move_to(l9),move_to(l1)] /*, [visit(l1), avoid(l6)]*/)
-        ,plan(visit(l1),at(l0),2, [move_to(l2), move_to(l1)]/*, [visit(l1), avoid(l6)]*/)
+        ,plan(visit(l1),at(l0),2, [move_to(l10), move_to(l1)]/*, [visit(l1), avoid(l6)]*/)
         ,
         plan(visit(l1),at(l0),3, [move_to(l2), move_to(l3), move_to(l4), move_to(l5), move_to(l1)]/*, [visit(l1), avoid(l6)]*/)
         ,plan(visit(l3),at(l1),1, [ move_to(l4), move_to(l5), move_to(l3)]/*,[visit(l3), visit(l5), avoid(l6)]*/)
@@ -77,6 +79,12 @@ append([],Ltwo,Ltwo);
 append([HLone | Tlone],Ltwo,[HLone | LoneRest]):-
     append(Tlone,Ltwo,LoneRest);
 
+//insert_in_list_next_to(LocElem,InsertElem,OrigList,NewList);
+insert_in_list_next_to(LocElem,InsertElem,[],[]);
+insert_in_list_next_to(LocElem,InsertElem,[LocElem | T],[LocElem | NewT]):-
+    add_to_list(InsertElem,T,NewT);
+insert_in_list_next_to(LocElem,InsertElem,[H | T],[H | Rest]):-
+    insert_in_list_next_to(LocElem,InsertElem,T,Rest);
 // find all the specs in not goals list that
 // b or v annots do not satisfy
 specs_in_not_goals_not_satisfied([],Vannots,Bannots,[]);
@@ -175,6 +183,10 @@ get_visit_annotations(at(InitLoc),Actions,Locs,[visit(InitLoc,0) | OtherAnnots])
 get_visit_annotations(at(InitLoc),Actions,Locs, OtherAnnots):-
     get_visit_annotations(Actions,Locs,OtherAnnots);
 
+update_visit_annotations_for_loc(Loc,Actions,OldVisits,[visit(Loc,Index) | OldVisits]):-
+    getindex(move_to(Loc),Actions,1,Index);
+update_visit_annotations_for_loc(Loc,Actions,OldVisits, OldVisits);
+    
 get_loc_index_in_actions(Loc,Actions,ActionIndex):-
     getindex(move_to(Loc),Actions,1,ActionIndex);
 
@@ -336,10 +348,6 @@ get_annotations(UnknownBefores,at(Loc),Actions,Start,Locs,VisitAnnots,BeforesAnn
     generate_befores_for_plan(UnknownBefores,VisitAnnots,BeforesAnnots);
 //    append(VisitAnnots,BeforesAnnots,Annotations);
 //
-update_visit_annotations_on_avoid_violation(Loc,Actions,OldVisitAnnotations,[visit(Loc,ActionIndex) | OldVisitAnnotations]):-
-    get_loc_index_in_actions(Loc,Actions,ActionIndex);
-
-update_visit_annotations_on_avoid_violation(Loc,Actions,OldVisitAnnotations,OldVisitAnnotations);
 
 gather_allplan_goals_wrapper(Plans,GoalsList):-
     gather_allplan_goals(Plans,NonUniqueGoalsList),
@@ -357,6 +365,18 @@ update_before_annotations([],[]);
 update_before_annotations([plan(Goal,at(Loc),Index,Actions,VisitAnnots,OBeforesAnnots) | TPlans],[plan(Goal,at(Loc),Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
     generate_befores_for_plan(OBeforesAnnots,VisitAnnots,BeforesAnnots),
     update_before_annotations(TPlans,TUpdatedPlans);
+    
+update_visit_annotations(Loc,[],[]); 
+update_visit_annotations(Loc,[plan(Goal,at(InitLoc),Index,Actions,OVisitAnnots,BeforesAnnots) | TPlans], [plan(Goal,at(InitLoc),Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
+    update_visit_annotations_for_loc(Loc,Actions,OVisitAnnots,VisitAnnots),
+    update_visit_annotations(Loc,TPlans,TUpdatedPlans);
+
+ replace_first_plan_in_plans_revise_for_loc(Loc,Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,[],[]);
+ replace_first_plan_in_plans_revise_for_loc(Loc,Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,[plan(Goal,Source,Index,Actions,Vannots,Bannots) | T],[plan(Goal,Source,Index,Actions,UVannots,UBannots) | Rest]):-
+    replace_first_plan_in_plans_revise_for_loc(Loc,Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,T,Rest);
+ replace_first_plan_in_plans_revise_for_loc(Loc,Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,[plan(Sgoal,Ssource,Sindex,SActions,Svannots,Sbannots) | T],[plan(Sgoal,Ssource,Sindex,SActions,NSvannots,Sbannots) | Rest]):-
+    update_visit_annotations_for_loc(Loc,SActions,Svannots,NSvannots),
+     replace_first_plan_in_plans_revise_for_loc(Loc,Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,T,Rest);
 //step 3
 //now we've annotated our plans
 //so we can select plans we want
@@ -493,6 +513,7 @@ can_violate(near(Loc),[H | T],Rest):-
 //revise_annotations(Loc,Percept,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
 //revise_annotations(Loc,near(NextLoc),Vannots,Bannots,NewVannots,UpdatedBannots):-
 //revise_annotations(Loc,Percept,Pindex,Vannots,Bannots,UpdatedVannots,UB)
+
 revise_annotations(Loc,near(NextLoc),CurrentPlanIndex,Vannots,Bannots,[visit(NextLoc,NextLocIndex) | UpdatedVannots],UpdatedBannots):-
 // insert nextloc at current plan index
     next_number(CurrentPlanIndex,IncrementedIndex),
@@ -504,9 +525,15 @@ revise_annotations(Loc,near(NextLoc),CurrentPlanIndex,Vannots,Bannots,[visit(Nex
 replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans):-
     replace_first_plan_in_plans(Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,Plans,NewPlans);
 
+replace_plan_annots_in_plans_revise_for_loc(Loc,Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans):-
+    replace_first_plan_in_plans_revise_for_loc(Loc,Goal,Source,Index,Actions,Vannots,Bannots,UVannots,UBannots,Plans,NewPlans);
+
+
+add_to_list(InsertElem,Oldlist,[InsertElem | Oldlist]);
 
 :Initial Goals:
 
+//start_agent[perform]
 initial_setup[perform]
 
 :Plans:
@@ -558,6 +585,29 @@ initial_setup[perform]
                                        +locations_of_interest(Locs),
                                        +specification("Combined",CSpecs)
                                        ;
+ //update specs
+ +!update_specs_with_avoid_loc(MaintainSpec,Loc)[perform]: {True} <- +.lock,                                              +!print_specification_beliefs[perform],+!update_req_pref_specs_with_avoid_loc(MaintainSpec,Loc)[perform],                                             +!print_specification_beliefs[perform],
+                        +!update_combined_specs[perform],                                             +!print_specification_beliefs[perform],
+                        +!update_locs_of_interest(Loc)[perform],                                             +!print_specification_beliefs[perform],
+                        -.lock;
+ +!update_req_pref_specs_with_avoid_loc(MaintainSpec,Loc)[perform]: {B specification("Required",Rspec),
+                                                B specification("Preferred",Pspec),
+                                                B specification("Required","not goals",Rngspec),
+                                                B insert_in_list_next_to(MaintainSpec,avoid(Loc),Pspec,Npspec),
+                                                B insert_in_list_next_to(MaintainSpec,avoid(Loc),Rspec,Nrspec),
+                                                B insert_in_list_next_to(MaintainSpec,avoid(Loc),Rngspec,Nrngspec)
+                                                } <- -specification("Required",Rspec),
+                                                 -specification("Preferred",Pspec),
+                                                 -specification("Required","not goals",Rngspec),
+                                                 +specification("Required",Nrspec),
+                                                 +specification("Preferred",Npspec),
+                                                 +specification("Required","not goals",Nrngspec);
++!update_combined_specs[perform]: {B specification("Combined",Oldspecs),
+                                B combined_specifications(CSpecs)} <- -specification("Combined",Oldspecs),
+                                +specification("Combined",CSpecs);
++!update_locs_of_interest(Loc)[perform]: {B locations_of_interest(OldLocs),
+                                B add_to_list(Loc,OldLocs,NewLocs)} <- -locations_of_interest(OldLocs), +locations_of_interest(NewLocs);
+
 +!do_all_spec_beliefs[perform] : {True} <- +.lock,
 //                                            +!print_specification_beliefs[perform],
                                             +!add_specifications[perform],
@@ -603,7 +653,7 @@ initial_setup[perform]
                                   -plans(Plans),
                                   +plans(AnnotatedPlans),
                                   +initial_setup_complete;
-+!add_plan_annotations_action[perform]: {B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_annotations[perform], -.lock;
++!add_plan_annotations_action[perform]: {B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_before_annotations_action[perform], -.lock;
  +!update_before_beliefs[perform]: {B specification("befores","unknown",UB),
                                           B specification("befores","satisfied",SB)
                                            ,B specification("befores","violated",VB)
@@ -616,7 +666,17 @@ initial_setup[perform]
                                            ,+specification("befores","unknown",NUb)
                                            ,+specification("befores","satisfied",NSb)
                                            ,+specification("befores","violated",NVb);
-+!update_annotations[perform]: {
++!update_visit_annotations_for_loc_action(Loc)[perform]:
+                        { B plans(Plans), B initial_setup_complete
+                        , B update_visit_annotations(Loc,Plans,UpdatedPlans)
+                            }         <-       print("IN UPDATE VISIT ANNOTS Old plans",Plans),
+                                       print("IN UPDATE VISIT ANNOTS Loc ",Loc)
+                                       , print("IN UPDATE VISIT ANNOTS Updated plans",UpdatedPlans)
+//                                                                                                           -plans(Plans),
+//                                                                                                           +plans(UpdatedPlans)
+;
+
++!update_before_annotations_action[perform]: {
                                                                   B plans(Plans)
                                                                   ,B initial_setup_complete
                                                                    ,B update_before_annotations(Plans,UpdatedPlans)}
@@ -1002,13 +1062,16 @@ initial_setup[perform]
 //						+visited(Loc,C), -location_count(C), sum(C,1,NewC), +location_count(NewC);
 
 +near(Loc): {B radiation(low) } <-
-					print("Near ", Loc," with low radiation"), +!get_violations(near(Loc))[perform]
+					print("Near ", Loc," with low radiation"),
+					 +!get_violations(near(Loc))[perform]
 					;
-+near(Loc): {~B radiation(low), B radiation(NotLow)} <-
-					print("Near ", Loc," with ",NotLow," radiation ")
-					// now we need to add avoid this location where maintain(radiation) was
-					// then we need to update our beliefs
-					// and finally revise all annotations wrt this new loc
++near(Loc): {~B radiation(low),B radiation(RadVal)} <-
+					print("Near ", Loc," with ",RadVal," radiation "),
+					+.lock,
+					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
+//					+!update_visit_annotations_for_loc_action(Loc)[perform],
+					+!revise_annotations_action_property(near(Loc))[perform],
+					-.lock
 					;
 
 +!get_violations(Percept)[perform]: {
@@ -1026,6 +1089,31 @@ initial_setup[perform]
  +!stop_current_plan(Percept,[])[perform]: {True} <- print("No violations possible so not stopping the plan");
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]: {True} <- print("Stop plan"), +violation_detected, print("Need to update the specification for this plan"),
                                                 +!revise_annotations_action(Percept)[perform];
++!revise_annotations_action_property(near(OtherLoc))[perform]:{
+  B current_plan(Goal,Source,Index,Actions),
+                                                          B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
+                                                          B at(Loc)
+                                                          ,B plan_index(Pindex)
+                                                          ,B revise_annotations(Loc,near(OtherLoc),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
+                                                          }
+                                                          <-
+                                                          +.lock,
+                                                          print("Revising annotations"),
+                                                          +!printPlan(Goal,Source,Index,AllActions,Vannots,Bannots)[perform],
+                                                          +!appendPrint("At loc ",Loc)[perform]
+                                                          ,+!appendPrint("Current plan ",Goal)[perform]
+                                                          ,print(Source)
+                                                          ,print(Index)
+                                                          ,+!appendPrint("Percept ",near(OtherLoc))[perform]
+                                                          ,print("Updated"),
+                                                          +!appendPrint("Plan index",Pindex)[perform],
+                                                          +!appendPrint("Updated Vannots",UpdatedVannots)[perform],
+                                                          +!appendPrint("Updated Bannots",UpdatedBannots)[perform],
+                                                          +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                                                          +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                                                        -.lock
+                                                          ;
+
 
 +!revise_annotations_action(Percept)[perform]: {
                                                           B current_plan(Goal,Source,Index,Actions),
@@ -1052,6 +1140,17 @@ initial_setup[perform]
                                                         -.lock
                                                           ;
 
++!update_plan_in_plans(Loc,Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
+                                    B plans(Plans),
+                                    B replace_plan_annots_in_plans_revise_for_loc(Loc,Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
+                                    }    <-
+                                            print("Updating violated annots Dropping old plans ",Plans),
+                                           -plans(Plans),
+                                           print("Updating violated annots Adding new plans ",NewPlans),
+                                           +plans(NewPlans),
+                                           +!stop_plan[achieve]
+                                      ;
+
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
                             B plans(Plans),   B replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                                                                } <-
@@ -1061,6 +1160,7 @@ initial_setup[perform]
                                                                                +plans(NewPlans),
                                                                                +!stop_plan[achieve]
                                                                               ;
+
 
 +!initial_setup[perform]: {True} <-
                             +.lock,
