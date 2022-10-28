@@ -42,10 +42,21 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	Predicate currently_at;
 	String currently_at_string;
 	String dup_agentName;
-
+	HashMap<String,Predicate> radiation_percepts = new HashMap<>();
+	String []radlevels = {"low","almostlow","high"};
+	void initialise_radiation_percepts()
+	{
+		String radiation_pred_name = "radiation";
+		for(String radlevel : radlevels)
+		{
+			Predicate rad_predicate = new Predicate(radiation_pred_name);
+			rad_predicate.addTerm(new Predicate(radlevel));
+			radiation_percepts.put(radlevel,rad_predicate);
+		}
+	}
 	public RosEnvAtPercept() {
 		super();
-
+		initialise_radiation_percepts();
 		bridge.connect("ws://localhost:9090", true);
 		System.out.println("Environment started, connection with ROS established.");
 
@@ -423,14 +434,18 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 		if (radiation >= 120) {
 			status = "red";
 			Literal rad = new Literal("danger_red");
+			addPercept(radiation_percepts.get("high"));
 			addPercept(rad);
 		} else if (radiation >= 90) {
 			status = "orange";
+			addPercept(radiation_percepts.get("almosthigh"));
 			Literal rad = new Literal("danger_orange");
 			addPercept(rad);
 		} else {
+			//low
+			addPercept(radiation_percepts.get("low"));
 			status = "green";
-			Literal rad = new Literal("danger_green"); 
+			Literal rad = new Literal("danger_green");
 			addPercept(rad);
 		}
 		Publisher radstatus = new Publisher("radiationStatus", "std_msgs/String", bridge);
