@@ -63,10 +63,10 @@ plan_index(0)
 //				plan(Goal/destination, source, index, actions, annotations )...])
 
 plans([
-	plan(visit(iP1),at(door), 1, [move_to(entrance), move_to(iP1)])
+	plan(visit(iP1),at(door), 1, [move_to(entrance), move_to(iP1)]),
 	plan(visit(t2bottom),at(iP1), 1, [move_to(t2top),move_to(t2left),move_to(t2bottom)]),
 	plan(visit(t2bottom),at(iP1), 2, [move_to(t1top), move_to(iP3), move_to(t1bottom), move_to(tankset),move_to(t2bottom)]),
-	plan(at(t2bottom),1,[move_to(tankset)]),
+	plan(visit(tankset),at(t2bottom),1,[move_to(tankset)]),
 	plan(visit(pipes),at(tankset),1,[move_to(pipes)]),
 	plan(visit(pipes),at(t2bottom),1,[move_to(pipes)])
 	])
@@ -372,6 +372,8 @@ gather_allplan_goals_wrapper(Plans,GoalsList):-
 gather_allplan_goals([],[]);
 gather_allplan_goals([plan(Goal,Source,Index,Actions) | TPlans],[Goal | PGoals]):-
     gather_allplan_goals(TPlans,PGoals);
+//gather_allplan_goals([H | TPlans], [badplan | PGoals]):-
+//    gather_allplan_goals(TPlans,PGoals);
 
 annotate_all_plans(Start,Locs,AllPossibleBefores,[],[]);
 annotate_all_plans(Start,Locs,AllPossibleBefores,[plan(Goal,Source,Index,Actions) | TPlans],[plan(Goal,Source,Index,Actions,VisitAnnots,BeforesAnnots) | TUpdatedPlans]):-
@@ -600,9 +602,13 @@ initial_setup[perform]
                                 B gather_allplan_goals_wrapper(Plans,GoalsList),
                                 B specification("Required",Rspec),
                                 B subtract_secondlist_from_firstlist(Rspec,GoalsList,NotGoalsList),
-                                B specification("Combined",Cspecs),
-                                B subtract_secondlist_from_firstlist(Cspecs,GoalsList,AllNotGoalsList)}
+                                B specification("Combined",Cspecs)
+                                ,
+                                B subtract_secondlist_from_firstlist(Cspecs,GoalsList,AllNotGoalsList)
+                                }
                                 <-
+                                print("DEBUG   add not goals spec   Plans   ",Plans),
+                                print("DEBUG   add not goals spec   GoalsList   ",GoalsList),
                                 +specification("Not goals",AllNotGoalsList),
                                 +specification("Goals",GoalsList),
                                 +specification("Required","not goals",NotGoalsList)
@@ -651,6 +657,7 @@ initial_setup[perform]
                                             +!add_specifications[perform],
 //                                             +!print_specification_beliefs("do all spec beliefs   ")[perform],
                                              +!add_locations_of_interest[perform],
+                                             +!print_specification_beliefs("do all spec beliefs   ")[perform],
 //                                                    +!print_specification_beliefs[perform],
                                             +!add_not_goals_spec[perform],
                                                                                         +!check_for_maintains[perform],
