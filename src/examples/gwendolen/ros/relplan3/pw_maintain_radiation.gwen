@@ -1092,8 +1092,9 @@ initial_setup[perform]
 					-.lock
 					;
 +near(Loc): {~B radiation(low), ~B specification("Maintain",MSpecs) }<-
-                                                                    					print("DEBUG   near loc   ","Near ", Loc,"dont care about radiation"),
-                                                                    					 +!get_violations(near(Loc))[perform];
+                print("DEBUG   near loc   ","Near ", Loc,"dont care about radiation"),
+                 +!get_violations(near(Loc))[perform];
++radiation(RadLevel): {True} <- print("Radiation level ",RadLevel);
 +!get_violations(Percept)[perform]: {
                                 ~B violation_detected,
                                 B specification("Can violate",Specs)
@@ -1135,23 +1136,48 @@ initial_setup[perform]
 +!revise_annotations_action_property(near(OtherLoc))[perform]:{
                 B current_plan(Goal,Source,Index,Actions),
               B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
-              ~B at(Loc)
+              ~B at(SomeLoc)
               ,B plan_index(Pindex)
-//              ,B revise_annotations(Loc,near(OtherLoc),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
+              ,B move_history([move_to(Loc) | T])
+             ,B revise_annotations(Loc,near(OtherLoc),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
                   }
                           <-
                           +.lock,
-                          print("DEBUG   revise annotations property   nowhere","Revising annotations")
-//                          +!printPlan(Goal,Source,Index,AllActions,Vannots,Bannots)[perform],
-//                          print("DEBUG   revise annotations property   ","At loc ",Loc)
+                          print("DEBUG   revise annotations property   nowhere","Revising annotations"),
+                          +!printPlan(Goal,Source,Index,AllActions,Vannots,Bannots)[perform],
+                          print("DEBUG   revise annotations property   ","previous loc ",Loc)
                           ,print("DEBUG   revise annotations property   nowhere","Current plan ",Goal,Source,Index)
                           ,print("DEBUG   revise annotations property   nowhere","Percept ",near(OtherLoc))
                           ,print("DEBUG   revise annotations property   nowhere","Updated"),
                           print("DEBUG   revise annotations property   nowhere","Plan index",Pindex),
-//                          print("DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
-//                          print("DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
-//                          +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
-//                          +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                          print("DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
+                          print("DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
+                          +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                          +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                        -.lock
+                          ;
+
++!revise_annotations_action_property(near(OtherLoc))[perform]:{
+                B current_plan(Goal,at(Loc),Index,Actions),
+              B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
+              ~B at(SomeLoc)
+              ,B plan_index(Pindex)
+              ,B move_history([])
+             ,B revise_annotations(Loc,near(OtherLoc),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
+                  }
+                          <-
+                          +.lock,
+                          print("DEBUG   revise annotations property   nowhere","Revising annotations"),
+                          +!printPlan(Goal,Source,Index,AllActions,Vannots,Bannots)[perform],
+                          print("DEBUG   revise annotations property   ","just started plan initial loc ",Loc)
+                          ,print("DEBUG   revise annotations property   nowhere","Current plan ",Goal,Source,Index)
+                          ,print("DEBUG   revise annotations property   nowhere","Percept ",near(OtherLoc))
+                          ,print("DEBUG   revise annotations property   nowhere","Updated"),
+                          print("DEBUG   revise annotations property   nowhere","Plan index",Pindex),
+                          print("DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
+                          print("DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
+                          +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                          +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                         -.lock
                           ;
 

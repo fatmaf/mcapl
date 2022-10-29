@@ -25,6 +25,15 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class RosEnvAtPercept extends DefaultEnvironment {
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_BLACK = "\u001B[30m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
+	public static final String ANSI_YELLOW = "\u001B[33m";
+	public static final String ANSI_BLUE = "\u001B[34m";
+	public static final String ANSI_PURPLE = "\u001B[35m";
+	public static final String ANSI_CYAN = "\u001B[36m";
+	public static final String ANSI_WHITE = "\u001B[37m";
 	static final String logname = "gwendolen.ros.rv_test.RosEnvAtPercept";
 
 	RosBridge bridge = new RosBridge();
@@ -43,7 +52,7 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 	String currently_at_string;
 	String dup_agentName;
 	HashMap<String,Predicate> radiation_percepts = new HashMap<>();
-	String []radlevels = {"low","almostlow","high"};
+	String []radlevels = {"low","almosthigh","high"};
 	void initialise_radiation_percepts()
 	{
 		String radiation_pred_name = "radiation";
@@ -430,13 +439,13 @@ public class RosEnvAtPercept extends DefaultEnvironment {
 
 	public void receive_inspect() {
 		String status = null;
-	//System.out.println("Radiation: " + radiation);
-		if (radiation >= 120) {
+	System.out.println(ANSI_CYAN+"Radiation: " + radiation+ANSI_RESET);
+		if (radiation >= 130) {
 			status = "red";
 			Literal rad = new Literal("danger_red");
 			addPercept(radiation_percepts.get("high"));
 			addPercept(rad);
-		} else if (radiation >= 90) {
+		} else if (radiation >= 95) {
 			status = "orange";
 			addPercept(radiation_percepts.get("almosthigh"));
 			Literal rad = new Literal("danger_orange");
