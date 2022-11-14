@@ -8,8 +8,8 @@ function draw() {
 
     if (canvas.getContext) {
         const ctx = canvas.getContext("2d");
-        let cwidth=500+10;
-        let cheight=500+10;
+        let cwidth=500;
+        let cheight=500;
         let rows = 10;
         let cols = 10;
 
@@ -29,7 +29,7 @@ function start()
         ws.close();
     }
     try {
-        ws = new WebSocket("ws://127.0.0.1:9999");
+        ws = new WebSocket("ws://0.0.0.0:8080");
         if (ws.readyState == 1) {
             ws.onopen = function () {
                 console.info("opened connection to websocket");
@@ -143,9 +143,19 @@ class GridWorld{
             }
         }
         //write the col and row numbers
-        let label_row_start_x = numc*wpx + wpx/2;
+
+        let label_row_start_x = numc*wpx + wpx/4;
         let label_row_start_y = hpx/2;
-        ctx.fillText("1",label_row_start_x,label_row_start_y);
+        for(let i = 0; i<numr; i++) {
+            ctx.fillText(`${i}`, label_row_start_x, label_row_start_y);
+            label_row_start_y+=hpx;
+        }
+        label_row_start_y+=(hpx/4);
+        for(let i = numc-1; i>=0; i--)
+        {
+            label_row_start_x-=wpx;
+            ctx.fillText(`${i}`,label_row_start_x,label_row_start_y);
+        }
         this.gridworldcanvasstate =   ctx.getImageData(0,0,canvas.width,canvas.height);
         this.clearw = canvas.width;
         this.clearh = canvas.height;
