@@ -14,6 +14,12 @@
     <path id="compile.classpath">
         <fileset dir="${jetty.lib.dir}"/>
     </path>
+    <path id="run.classpath">
+        <pathelement path="${build.dir}"/>
+        <fileset dir="${jetty.lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
 
     <target name="init">
         <mkdir dir="${build.dir}"/>
@@ -45,6 +51,11 @@
         <copy file="${dist.dir}/${name}.war" overwrite="true"
               todir="${deploy.path}"/>
         <echo>Archive deployed</echo>
+    </target>
+    <target name="run" depends="compile">
+        <echo>Running the program</echo>
+        <java classname="eass.ros.mimic.sim.sever.JettyWebSocketClient"
+              classpathref="run.classpath"/>
     </target>
 
 </project>
