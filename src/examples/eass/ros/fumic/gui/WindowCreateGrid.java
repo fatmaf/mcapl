@@ -34,8 +34,9 @@ public class WindowCreateGrid extends WindowBase {
 
     private void move_robot()
     {
-        System.out.println("Moving robot");
-        cells[rx][ry].remove(robot);
+
+        String toprint = String.format("[%d,%d]",ry,rx);
+        cells[ry][rx].remove(robot);
         rx++;
 
         if(rx >= numX)
@@ -47,8 +48,11 @@ public class WindowCreateGrid extends WindowBase {
         {
             ry= 0;
         }
-        cells[rx][ry].add(robot);
-
+        cells[ry][rx].add(robot);
+        gridPanel.repaint();
+        gridPanel.revalidate();
+        toprint+= String.format(" to [%d,%d]",ry,rx);
+        System.out.println(toprint);
     }
 
     public class TestListener implements MouseListener {
