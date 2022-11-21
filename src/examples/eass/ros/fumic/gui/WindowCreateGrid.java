@@ -15,8 +15,6 @@ public class WindowCreateGrid extends WindowBase {
     private JButton moveButton;
     private GridCell[][] cells;
     private Robot robot;
-    int rx = 0;
-    int ry=0;
     int numX;
     int numY;
 
@@ -32,73 +30,46 @@ public class WindowCreateGrid extends WindowBase {
     ;
     CellType currentCellType = CellType.NONE;
 
-    private void move_robot()
-    {
+    private void move_robot_socket() {
+        // first we need to remove the robot
+        remove_robot_from_cell();
+        //update parameters
+        robot.updateParameters();
+        // add robot to cell
+        add_robot_to_cell();
 
-        String toprint = String.format("[%d,%d]",ry,rx);
-        cells[ry][rx].remove(robot);
-        rx++;
+    }
 
-        if(rx >= numX)
-        {
-            rx =0;
-            ry++;
-        }
-        if(ry >= numY)
-        {
-            ry= 0;
-        }
+    private void add_robot_to_cell() {
+        int rx = robot.x;
+        int ry = robot.y;
         cells[ry][rx].add(robot);
         gridPanel.repaint();
         gridPanel.revalidate();
-        toprint+= String.format(" to [%d,%d]",ry,rx);
-        System.out.println(toprint);
     }
 
-    public class TestListener implements MouseListener {
+    private void remove_robot_from_cell() {
+        int rx = robot.x;
+        int ry = robot.y;
 
-         @Override
-        public void mouseClicked(MouseEvent e) {
-            // System.out.println("Clicked");
-            if (e.getSource() instanceof GridCell) {
-                if (currentCellType != CellType.NONE) {
-                    if (currentCellType == CellType.ELEMENT) {
-                        if(currentElementType == GridCell.GridCellElementType.DOOR)
-                        {
-                            try {
-//                                doDoor((GridCell)e.getSource());
-                            } catch (Exception ex) {
-                                throw new RuntimeException(ex);
-                            }
-                        }
-                        ((GridCell) e.getSource()).updateType(currentElementType);
-                    }
-                    else
-                        ((GridCell) e.getSource()).updateType(currentStateType);
-                }
-            }
-        }
+//        String toprint = String.format("[%d,%d]",ry,rx);
+        cells[ry][rx].remove(robot);
+        gridPanel.repaint();
+        gridPanel.revalidate();
+    }
 
-        @Override
-        public void mousePressed(MouseEvent e) {
-            //   System.out.println("Pressed");
+    private void move_robot_left() {
+        robot.move_left(numX, numY);
+    }
 
-        }
+    private void move_robot_button() {
 
-        @Override
-        public void mouseReleased(MouseEvent e) {
-            //   System.out.println("Released");
-        }
+        // first we need to remove the robot
+        remove_robot_from_cell();
 
-        @Override
-        public void mouseEntered(MouseEvent e) {
-            //    System.out.println("Entered");
-        }
-
-        @Override
-        public void mouseExited(MouseEvent e) {
-            //     System.out.println("Exited");
-        }
+        move_robot_left();
+        // add robot to cell
+        add_robot_to_cell();
 
     }
 
@@ -118,14 +89,13 @@ public class WindowCreateGrid extends WindowBase {
 //        this.doorsList = new ArrayList<>();
         //create a grid of this size
         cells = new GridCell[numX][numY];
-        gridPanel.setLayout(new GridLayout(numX+1, numY+1));
+        gridPanel.setLayout(new GridLayout(numX + 1, numY + 1));
         createMenu();
         for (int row = 0; row < numX; row++) {
             //add the beginning add a row number
-            gridPanel.add(new GridCellLabel(""+row));
+            gridPanel.add(new GridCellLabel("" + row));
             for (int col = 0; col < numY; col++) {
                 cells[row][col] = new GridCell(row, col);
-                cells[row][col].addMouseListener(new TestListener());
                 gridPanel.add(cells[row][col]);
             }
 
@@ -133,22 +103,40 @@ public class WindowCreateGrid extends WindowBase {
         //when done add column numbers
         gridPanel.add(new GridCellLabel(""));
         for (int col = 0; col < numY; col++) {
-            gridPanel.add(new GridCellLabel(""+col));
+            gridPanel.add(new GridCellLabel("" + col));
         }
 
         gridPanel.setFocusable(true);
         gridPanel.requestFocusInWindow();
-        robot = new Robot(Color.PINK);
-
+        robot = new Robot(Color.PINK, false);
         cells[0][0].add(robot);
+        robot.x = 0;
+        robot.y = 0;
 
 
         moveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                move_robot();
+                move_robot_button();
             }
         });
+        startButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                robot.start();
+                robot.set_controlled();
+
+//                robot.updateParameters();
+            }
+        });
+
+        Timer timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                move_robot_socket();
+            }
+        });
+        timer.start();
 
     }
 
@@ -159,7 +147,7 @@ public class WindowCreateGrid extends WindowBase {
 
 
     public static void main(String[] args) {
-        WindowBase wb = new WindowCreateGrid(10,10);
+        WindowBase wb = new WindowCreateGrid(10, 10);
         wb.newWindow();
     }
 }
