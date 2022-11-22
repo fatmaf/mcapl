@@ -1,4 +1,4 @@
-package examples.eass.ros.fumic.gui;
+package eass.ros.fumic.gui;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -143,6 +143,7 @@ public class GridCell extends JLabel {
         setBackground(getFillColor());
         setVisible(true);
         setOpaque(true);
+        setText(String.format("%d,%d",xpos,ypos));
         //  addMouseListener(m);
     }
 

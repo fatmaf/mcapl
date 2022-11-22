@@ -1,4 +1,4 @@
-package examples.eass.ros.fumic.gui;
+package eass.ros.fumic.gui;
 
 import javax.annotation.Resources;
 import javax.swing.*;
@@ -17,7 +17,7 @@ public abstract class WindowBase {
     abstract Container getBasePanel();
     public void newWindow()
     {
-        JFrame frame = new JFrame("JFrame");
+        JFrame frame = new JFrame("Gridworld Robot Simulator");
         this.setParent(frame);
         frame.setContentPane(this.getBasePanel());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

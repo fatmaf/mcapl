@@ -1,4 +1,4 @@
-package examples.eass.ros.fumic.gui;
+package eass.ros.fumic.gui;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,6 +13,7 @@ public class WindowCreateGrid extends WindowBase {
     private JPanel buttonsPanel;
     private JButton startButton;
     private JButton moveButton;
+    private JButton restartButton;
     private GridCell[][] cells;
     private Robot robot;
     int numX;
@@ -75,13 +76,37 @@ public class WindowCreateGrid extends WindowBase {
 
 
     void createMenu() {
-        JMenu m1 = new JMenu("Hello");
+        JMenu m1 = new JMenu("About");
 
         menuBar.add(m1);
-        JMenuItem mitem = new JMenuItem("World");
+        JMenuItem mitem = new JMenuItem("Gridworld robot simulator");
         m1.add(mitem);
     }
 
+    private void initialise_robot()
+    {
+        if(robot!=null)
+        {
+            //remove robot
+            this.remove_robot_from_cell();
+        }
+        robot = new Robot(Color.PINK, false);
+        cells[0][0].add(robot);
+        robot.x = 0;
+        robot.y = 0;
+    }
+
+    private void reinitialise_robot()
+    {
+        if(robot!=null)
+        {
+            robot.close();
+           robot = null;
+        }
+        initialise_robot();
+
+
+    }
     public WindowCreateGrid(int numX, int numY) {
         this.numX = numX;
         this.numY = numY;
@@ -108,10 +133,8 @@ public class WindowCreateGrid extends WindowBase {
 
         gridPanel.setFocusable(true);
         gridPanel.requestFocusInWindow();
-        robot = new Robot(Color.PINK, false);
-        cells[0][0].add(robot);
-        robot.x = 0;
-        robot.y = 0;
+
+        initialise_robot();
 
 
         moveButton.addActionListener(new ActionListener() {
@@ -129,6 +152,15 @@ public class WindowCreateGrid extends WindowBase {
 //                robot.updateParameters();
             }
         });
+
+        restartButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reinitialise_robot();
+            }
+        });
+
+
 
         Timer timer = new Timer(1000, new ActionListener() {
             @Override

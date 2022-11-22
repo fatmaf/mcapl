@@ -1,4 +1,4 @@
-package examples.eass.ros.fumic.gui;
+package eass.ros.fumic.gui;
 
 import ail.util.AILSocketServer;
 
@@ -28,6 +28,8 @@ public class Robot extends JPanel {
     boolean controlled;
 
     private int started = 0;
+
+    private double parentSizeFraction = 0.25;
     protected ail.util.AILSocketServer socketServer;
 
     @Override
@@ -40,7 +42,7 @@ public class Robot extends JPanel {
         int size = get_size();
 //        System.out.println("Robot size "+size);
 
-        circle = new Ellipse2D.Float(getWidth() / 4, getHeight() / 4, size, size);
+        circle = new Ellipse2D.Float((int)(getWidth() *parentSizeFraction), (int)(getHeight() *parentSizeFraction), size, size);
 
 
     }
@@ -155,9 +157,11 @@ public class Robot extends JPanel {
         if (controlled) {
             try {
 //                colorPrint("Robot Writing stuff ");
-                String toprint = String.format("Robot writing: movebase_result(%d,%d), radiation:%f, started:%d",movebase_id,movebase_result,radiation_value,started);
+                String toprint = String.format("Robot writing: movebase_result(%d,%d), radiation:%f, started:%d, robotxy:%d,%d",movebase_id,movebase_result,radiation_value,started,this.x,this.y);
                 colorPrint(toprint);
                 //writing movebase result
+                socketServer.writeInt(this.x);
+                socketServer.writeInt(this.y);
                 socketServer.writeInt(movebase_id);
                 socketServer.writeInt(movebase_result);
 //                socketServer.write("movebase_result(0,3)"); //TODO change this?
@@ -181,7 +185,7 @@ public class Robot extends JPanel {
     private int get_size() {
 //        System.out.println("Robot w "+getWidth()+" h "+getHeight());
         int minval = Math.min(getWidth(), getHeight());
-        minval = minval / 2;
+        minval = (int)(minval *parentSizeFraction);
         return minval;
 
     }

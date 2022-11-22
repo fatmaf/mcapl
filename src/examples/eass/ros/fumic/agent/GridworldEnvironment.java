@@ -20,7 +20,7 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
 
     double radiation=0;
     boolean received_started = false;
-
+    String current_at_loc = null;
     public GridworldEnvironment() {
         super();
         super.scheduler_setup(this, new NActionScheduler(100));
@@ -40,8 +40,12 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
             int mb_res = -1;
             double rad_val = -1;
             int started = -1;
+            int robot_x = -1;
+            int robot_y = -1;
             boolean readvalues = false;
             if (socket.pendingInput()) {
+                robot_x = socket.readInt();
+                robot_y = socket.readInt();
                 mb_id = socket.readInt();
                 mb_res= socket.readInt();
                 rad_val = socket.readDouble();
@@ -50,6 +54,8 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
             }
 
             while (socket.pendingInput()) {
+                robot_x = socket.readInt();
+                robot_y = socket.readInt();
                 mb_id = socket.readInt();
                 mb_res= socket.readInt();
                 rad_val = socket.readDouble();
@@ -57,7 +63,7 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 readvalues = true;
             }
             if (readvalues) {
-                String toprint = String.format("read: movebase_result(%d,%d), radiation: %f, started: %d", mb_id,mb_res, rad_val, started);
+                String toprint = String.format("read: movebase_result(%d,%d), radiation: %f, started: %d, xy:%d,%d", mb_id,mb_res, rad_val, started,robot_x,robot_y);
                 radiation=rad_val;
                 System.out.println(toprint);
                 if (started > 0) {
@@ -70,6 +76,14 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 mb.addTerm(new NumberTermImpl(mb_id));
                 mb.addTerm(new NumberTermImpl(mb_res));
                 addUniquePercept("movebase_result",mb);
+                String at_loc_string = String.format("l%d_%d",robot_x,robot_y);
+                Literal at_loc = new Literal("at");
+                at_loc.addTerm(new Literal(at_loc_string));
+                // only add this new percept if it did not exist before
+                if(current_at_loc==null || !current_at_loc.equals(at_loc_string)) {
+                    current_at_loc = at_loc_string;
+                    addUniquePercept("at", at_loc);
+                }
 
             }
 

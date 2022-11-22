@@ -1,0 +1,9 @@
+mas.file = /src/examples/eass/ros/fumic/agent/pw_attempt1.gwen
+mas.builder = eass.EASSMASBuilder
+
+env = eass.ros.fumic.agent.GridworldEnvironment
+
+log.info = ail.mas.DefaultEnvironment
+log.info = ail.semantics.operationalrules
+log.info = ajpf.MCAPLAgent
+log.format = brief

@@ -1,4 +1,4 @@
-package examples.eass.ros.fumic.gui;
+package eass.ros.fumic.gui;
 
 import javax.swing.*;
 import javax.swing.border.Border;
