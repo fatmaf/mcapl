@@ -6,4 +6,6 @@ env = eass.ros.fumic.agent.GridworldEnvironment
 log.info = ail.mas.DefaultEnvironment
 log.info = ail.semantics.operationalrules
 log.info = ajpf.MCAPLAgent
+log.info = ail.semantics.AILAgent
+log.info = ail.syntax.EvaluationAndRuleBaseIterator
 log.format = brief

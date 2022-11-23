@@ -85,11 +85,7 @@ public class WindowCreateGrid extends WindowBase {
 
     private void initialise_robot()
     {
-        if(robot!=null)
-        {
-            //remove robot
-            this.remove_robot_from_cell();
-        }
+
         robot = new Robot(Color.PINK, false);
         cells[0][0].add(robot);
         robot.x = 0;
@@ -101,6 +97,7 @@ public class WindowCreateGrid extends WindowBase {
         if(robot!=null)
         {
             robot.close();
+            this.remove_robot_from_cell();
            robot = null;
         }
         initialise_robot();

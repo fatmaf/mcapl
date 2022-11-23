@@ -23,11 +23,13 @@ public class Robot extends JPanel {
     int y;
 
     double radiation_value = 0.0;
-    int movebase_result = 3;
+    int movebase_result = -1;
     int movebase_id=0;
     boolean controlled;
 
     private int started = 0;
+
+    private boolean read_values = false;
 
     private double parentSizeFraction = 0.25;
     protected ail.util.AILSocketServer socketServer;
@@ -120,6 +122,7 @@ public class Robot extends JPanel {
                 y = socketServer.readInt();
                 String toprint = String.format("read x: %d, y: %d", x, y);
                 colorPrint(toprint);
+                read_values = true;
             } catch (Exception e) {
                 System.err.println("READ ERROR: Closing socket");
                 close();
@@ -156,12 +159,23 @@ public class Robot extends JPanel {
     public void writeValues() {
         if (controlled) {
             try {
+                if(read_values)
+                {
+                    movebase_result = 3;
+                    read_values = false;
+                } else
+                {
+                    movebase_result = -1;
+
+                }
 //                colorPrint("Robot Writing stuff ");
                 String toprint = String.format("Robot writing: movebase_result(%d,%d), radiation:%f, started:%d, robotxy:%d,%d",movebase_id,movebase_result,radiation_value,started,this.x,this.y);
                 colorPrint(toprint);
                 //writing movebase result
                 socketServer.writeInt(this.x);
                 socketServer.writeInt(this.y);
+
+
                 socketServer.writeInt(movebase_id);
                 socketServer.writeInt(movebase_result);
 //                socketServer.write("movebase_result(0,3)"); //TODO change this?

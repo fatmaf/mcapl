@@ -8,106 +8,106 @@ EASS
 
 :Initial Beliefs:
 // each location has a coordinate (the belief that this is a location is in the reasoning engine)
-location_cordinate(l0_0,0,0,0)
-location_cordinate(l0_1,0,1,0)
-location_cordinate(l0_2,0,2,0)
-location_cordinate(l0_3,0,3,0)
-location_cordinate(l0_4,0,4,0)
-location_cordinate(l0_5,0,5,0)
-location_cordinate(l0_6,0,6,0)
-location_cordinate(l0_7,0,7,0)
-location_cordinate(l0_8,0,8,0)
-location_cordinate(l0_9,0,9,0)
-location_cordinate(l1_0,1,0,0)
-location_cordinate(l1_1,1,1,0)
-location_cordinate(l1_2,1,2,0)
-location_cordinate(l1_3,1,3,0)
-location_cordinate(l1_4,1,4,0)
-location_cordinate(l1_5,1,5,0)
-location_cordinate(l1_6,1,6,0)
-location_cordinate(l1_7,1,7,0)
-location_cordinate(l1_8,1,8,0)
-location_cordinate(l1_9,1,9,0)
-location_cordinate(l2_0,2,0,0)
-location_cordinate(l2_1,2,1,0)
-location_cordinate(l2_2,2,2,0)
-location_cordinate(l2_3,2,3,0)
-location_cordinate(l2_4,2,4,0)
-location_cordinate(l2_5,2,5,0)
-location_cordinate(l2_6,2,6,0)
-location_cordinate(l2_7,2,7,0)
-location_cordinate(l2_8,2,8,0)
-location_cordinate(l2_9,2,9,0)
-location_cordinate(l3_0,3,0,0)
-location_cordinate(l3_1,3,1,0)
-location_cordinate(l3_2,3,2,0)
-location_cordinate(l3_3,3,3,0)
-location_cordinate(l3_4,3,4,0)
-location_cordinate(l3_5,3,5,0)
-location_cordinate(l3_6,3,6,0)
-location_cordinate(l3_7,3,7,0)
-location_cordinate(l3_8,3,8,0)
-location_cordinate(l3_9,3,9,0)
-location_cordinate(l4_0,4,0,0)
-location_cordinate(l4_1,4,1,0)
-location_cordinate(l4_2,4,2,0)
-location_cordinate(l4_3,4,3,0)
-location_cordinate(l4_4,4,4,0)
-location_cordinate(l4_5,4,5,0)
-location_cordinate(l4_6,4,6,0)
-location_cordinate(l4_7,4,7,0)
-location_cordinate(l4_8,4,8,0)
-location_cordinate(l4_9,4,9,0)
-location_cordinate(l5_0,5,0,0)
-location_cordinate(l5_1,5,1,0)
-location_cordinate(l5_2,5,2,0)
-location_cordinate(l5_3,5,3,0)
-location_cordinate(l5_4,5,4,0)
-location_cordinate(l5_5,5,5,0)
-location_cordinate(l5_6,5,6,0)
-location_cordinate(l5_7,5,7,0)
-location_cordinate(l5_8,5,8,0)
-location_cordinate(l5_9,5,9,0)
-location_cordinate(l6_0,6,0,0)
-location_cordinate(l6_1,6,1,0)
-location_cordinate(l6_2,6,2,0)
-location_cordinate(l6_3,6,3,0)
-location_cordinate(l6_4,6,4,0)
-location_cordinate(l6_5,6,5,0)
-location_cordinate(l6_6,6,6,0)
-location_cordinate(l6_7,6,7,0)
-location_cordinate(l6_8,6,8,0)
-location_cordinate(l6_9,6,9,0)
-location_cordinate(l7_0,7,0,0)
-location_cordinate(l7_1,7,1,0)
-location_cordinate(l7_2,7,2,0)
-location_cordinate(l7_3,7,3,0)
-location_cordinate(l7_4,7,4,0)
-location_cordinate(l7_5,7,5,0)
-location_cordinate(l7_6,7,6,0)
-location_cordinate(l7_7,7,7,0)
-location_cordinate(l7_8,7,8,0)
-location_cordinate(l7_9,7,9,0)
-location_cordinate(l8_0,8,0,0)
-location_cordinate(l8_1,8,1,0)
-location_cordinate(l8_2,8,2,0)
-location_cordinate(l8_3,8,3,0)
-location_cordinate(l8_4,8,4,0)
-location_cordinate(l8_5,8,5,0)
-location_cordinate(l8_6,8,6,0)
-location_cordinate(l8_7,8,7,0)
-location_cordinate(l8_8,8,8,0)
-location_cordinate(l8_9,8,9,0)
-location_cordinate(l9_0,9,0,0)
-location_cordinate(l9_1,9,1,0)
-location_cordinate(l9_2,9,2,0)
-location_cordinate(l9_3,9,3,0)
-location_cordinate(l9_4,9,4,0)
-location_cordinate(l9_5,9,5,0)
-location_cordinate(l9_6,9,6,0)
-location_cordinate(l9_7,9,7,0)
-location_cordinate(l9_8,9,8,0)
-location_cordinate(l9_9,9,9,0)
+location_coordinate(l0_0,0,0,0)
+location_coordinate(l0_1,0,1,0)
+location_coordinate(l0_2,0,2,0)
+location_coordinate(l0_3,0,3,0)
+location_coordinate(l0_4,0,4,0)
+location_coordinate(l0_5,0,5,0)
+location_coordinate(l0_6,0,6,0)
+location_coordinate(l0_7,0,7,0)
+location_coordinate(l0_8,0,8,0)
+location_coordinate(l0_9,0,9,0)
+location_coordinate(l1_0,1,0,0)
+location_coordinate(l1_1,1,1,0)
+location_coordinate(l1_2,1,2,0)
+location_coordinate(l1_3,1,3,0)
+location_coordinate(l1_4,1,4,0)
+location_coordinate(l1_5,1,5,0)
+location_coordinate(l1_6,1,6,0)
+location_coordinate(l1_7,1,7,0)
+location_coordinate(l1_8,1,8,0)
+location_coordinate(l1_9,1,9,0)
+location_coordinate(l2_0,2,0,0)
+location_coordinate(l2_1,2,1,0)
+location_coordinate(l2_2,2,2,0)
+location_coordinate(l2_3,2,3,0)
+location_coordinate(l2_4,2,4,0)
+location_coordinate(l2_5,2,5,0)
+location_coordinate(l2_6,2,6,0)
+location_coordinate(l2_7,2,7,0)
+location_coordinate(l2_8,2,8,0)
+location_coordinate(l2_9,2,9,0)
+location_coordinate(l3_0,3,0,0)
+location_coordinate(l3_1,3,1,0)
+location_coordinate(l3_2,3,2,0)
+location_coordinate(l3_3,3,3,0)
+location_coordinate(l3_4,3,4,0)
+location_coordinate(l3_5,3,5,0)
+location_coordinate(l3_6,3,6,0)
+location_coordinate(l3_7,3,7,0)
+location_coordinate(l3_8,3,8,0)
+location_coordinate(l3_9,3,9,0)
+location_coordinate(l4_0,4,0,0)
+location_coordinate(l4_1,4,1,0)
+location_coordinate(l4_2,4,2,0)
+location_coordinate(l4_3,4,3,0)
+location_coordinate(l4_4,4,4,0)
+location_coordinate(l4_5,4,5,0)
+location_coordinate(l4_6,4,6,0)
+location_coordinate(l4_7,4,7,0)
+location_coordinate(l4_8,4,8,0)
+location_coordinate(l4_9,4,9,0)
+location_coordinate(l5_0,5,0,0)
+location_coordinate(l5_1,5,1,0)
+location_coordinate(l5_2,5,2,0)
+location_coordinate(l5_3,5,3,0)
+location_coordinate(l5_4,5,4,0)
+location_coordinate(l5_5,5,5,0)
+location_coordinate(l5_6,5,6,0)
+location_coordinate(l5_7,5,7,0)
+location_coordinate(l5_8,5,8,0)
+location_coordinate(l5_9,5,9,0)
+location_coordinate(l6_0,6,0,0)
+location_coordinate(l6_1,6,1,0)
+location_coordinate(l6_2,6,2,0)
+location_coordinate(l6_3,6,3,0)
+location_coordinate(l6_4,6,4,0)
+location_coordinate(l6_5,6,5,0)
+location_coordinate(l6_6,6,6,0)
+location_coordinate(l6_7,6,7,0)
+location_coordinate(l6_8,6,8,0)
+location_coordinate(l6_9,6,9,0)
+location_coordinate(l7_0,7,0,0)
+location_coordinate(l7_1,7,1,0)
+location_coordinate(l7_2,7,2,0)
+location_coordinate(l7_3,7,3,0)
+location_coordinate(l7_4,7,4,0)
+location_coordinate(l7_5,7,5,0)
+location_coordinate(l7_6,7,6,0)
+location_coordinate(l7_7,7,7,0)
+location_coordinate(l7_8,7,8,0)
+location_coordinate(l7_9,7,9,0)
+location_coordinate(l8_0,8,0,0)
+location_coordinate(l8_1,8,1,0)
+location_coordinate(l8_2,8,2,0)
+location_coordinate(l8_3,8,3,0)
+location_coordinate(l8_4,8,4,0)
+location_coordinate(l8_5,8,5,0)
+location_coordinate(l8_6,8,6,0)
+location_coordinate(l8_7,8,7,0)
+location_coordinate(l8_8,8,8,0)
+location_coordinate(l8_9,8,9,0)
+location_coordinate(l9_0,9,0,0)
+location_coordinate(l9_1,9,1,0)
+location_coordinate(l9_2,9,2,0)
+location_coordinate(l9_3,9,3,0)
+location_coordinate(l9_4,9,4,0)
+location_coordinate(l9_5,9,5,0)
+location_coordinate(l9_6,9,6,0)
+location_coordinate(l9_7,9,7,0)
+location_coordinate(l9_8,9,8,0)
+location_coordinate(l9_9,9,9,0)
 
 
 //location count for book keeping
@@ -128,17 +128,21 @@ location_count(0)
 
 /* just so we know things have started - relevant for the simulation, not sure about actual ROS */
 +started: {B location_count(C)} <-
+
     assert_shared(location_count(C)),
-    assert_shared(start);
+    assert_shared(start),
+    printstate;
 
 // moving
-+! move(Loc) [perform]: {B location_coordinate(Loc,X,Y,Z)} <- assert_shared(going(Loc)), assert_shared(moving), move(X,Y,Z);
++!move(Loc) [perform]: {B location_coordinate(Loc,X,Y,Z)} <- printstate,
+print("Abstraction agent moving to ",Loc,X,Y,Z), assert_shared(going(Loc)), assert_shared(moving), move(X,Y,Z);
 
 // the results of ros movebase
 +movebase_result(Id,3) : { B moving, B going(Loc) } <-
 						print("DEBUG   movebase result 3   ","Movement to location ",Loc," ended with success ","movebase id ",Id),
 						+!move_cleanup[perform];
-+movebase_result(Id,3) : {True} <- printstate;
+//+movebase_result(Id,3) : {True} <- printstate;
++movebase_result(Id,3): {~B moving, ~B going(Loc)} <- print("DEBUG   removing movebase result because no movement"), -movebase_result(Id,3);
 +movebase_result(Id,0) : { B moving, B going(Loc) } <-
 						print("DEBUG   movebase result 0   ","moving to ",Loc,"movebase id ",Id,"The goal is pending");
 
@@ -1086,16 +1090,9 @@ speclist_has_maintain([H | T], Rest):-
                                         ,+specification("Can violate",CanViolate)
 
                                         ,print("DEBUG   choose first plan   ","Possible plan violations",PossibleViolations)
-//                                        ,printagentstate
-                                        ,+!achieve_plan(Goal,Source,Index)[achieve]
-                                        ,+!random_action[achieve]
-//                                        ,print("Kholo BC")
-//                                        ,printagentstate
+                                        ,+!do_all_plan_steps(visit(l0_5),at(l0_0),1)[achieve]
                                         ;
 
-
-+!random_action[achieve] : {True} <- print("DEBUG   random_action   "), +!set_random_action_achieved[perform] ;
-+!set_random_action_achieved[perform]: {True} <- print("setting random action to achieved"), +random_action;
 
 +!get_new_plan[perform]: {True} <- 			+.lock,
 
@@ -1118,7 +1115,7 @@ speclist_has_maintain([H | T], Rest):-
                             print("DEBUG   stop plan   ","Dropping current plan ",Goal,Index),
                             -current_plan(Goal,Source,Index,Actions),
                             print("DEBUG   stop plan   ","Dropping achieve goal too"),
-                            -!achieve_plan(Goal,Source,Index)[achieve],
+                            -!do_all_plan_steps(Goal,Source,Index)[achieve],
                             +!move_back[achieve];
 
 +!stop_plan[achieve]: {B current_plan(Goal,Source,Index,Actions),
@@ -1126,7 +1123,7 @@ speclist_has_maintain([H | T], Rest):-
                     <-
                     +moving_back,
                     print("DEBUG   stop plan   ","Stopping plan not moving"),
-                    -!achieve_plan(Goal,Source,Index)[achieve],
+                    -!do_all_plan_steps(Goal,Source,Index)[achieve],
                     -current_plan(Goal,Source,Index,Actions),
                     +!move_back[achieve];
 +!stop_plan[achieve]: {~B current_plan(Goal,Source,Index,Actions),
@@ -1191,14 +1188,14 @@ speclist_has_maintain([H | T], Rest):-
 
 
 // then you set about achieving the plan
-+!achieve_plan(Goal,Source,Index)[achieve]: {B moving} <- print("DEBUG   achieve plan   ","moving"),do_nothing;
-+!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,[]),
++!do_all_plan_steps(Goal,Source,Index)[achieve]: {B moving} <- /*print("DEBUG   achieve plan   ","moving"),*/do_nothing;
++!do_all_plan_steps(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,[]),
                                         ~B moving,
                                         ~B moving_back} /*done*/
 									<-
 					print("DEBUG   achieve plan   ","Empty plan aycshunz",Goal,Index),
 					+!printCurrentPlanBelief[perform],
-					+achieve_plan(Goal,Source,Index),
+					+do_all_plan_steps(Goal,Source,Index),
 					print("DEBUG   achieve plan   ","Removed belief of current plan",Goal,Index),
 					-current_plan(Goal,Source,Index,[]),
 					 +!update_move_history[perform],
@@ -1206,7 +1203,7 @@ speclist_has_maintain([H | T], Rest):-
 					+!printCurrentPlanBelief[perform],
 					+!get_new_plan[perform];
 
-+!achieve_plan(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back } /*done*/
++!do_all_plan_steps(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back } /*done*/
 									<-
 									print("DEBUG   achieve plan   ","Naat moving gaat playn",Goal,Index),
 									+!printCurrentPlanBelief[perform],
@@ -1214,7 +1211,7 @@ speclist_has_maintain([H | T], Rest):-
 									+!update_move_history[perform],
 									+!doActions[perform];
 
-+!achieve_plan(Goal,Source,Index)[achieve]: { ~B current_plan(Goal,Source,Index,Actions)
++!do_all_plan_steps(Goal,Source,Index)[achieve]: { ~B current_plan(Goal,Source,Index,Actions)
                                               ,B plan_exists(Goal,Source,Index,Actions,Vannots,Bannots),
                                               ~B moving, ~B moving_back
 											} /*done*/
@@ -1227,9 +1224,15 @@ speclist_has_maintain([H | T], Rest):-
 									+!reset_move_history[perform],
 									+!update_move_history[perform],
 									-.lock,
+//									printstate,
 					+!printCurrentPlanBelief[perform],
-									+!doActions[perform];
-+!achieve_plan(Goal,Source,Index)[achieve]: {True} <-print("DEBUG   achieve plan   ","no shit sherlock",Goal,Index), printstate, do_nothing;//printstate;
+
+									+!doActions[perform]
+//									,
+//									+do_all_plan_steps(Goal,Source,Index),
+//									printstate
+									;
+//+!do_all_plan_steps(Goal,Source,Index)[achieve]: {True} <-print("DEBUG   achieve plan   ","no shit sherlock",Goal,Index);//printstate;
 
 +!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
 					<-
@@ -1243,13 +1246,13 @@ speclist_has_maintain([H | T], Rest):-
 +!printCurrentPlanBelief[perform]: {B current_plan(Goal,Source,Index,Actions)} <- print("DEBUG   print current belief   ","I believe that the current plan has",Goal,Source,Index,Actions,"Done printing current plan"),+!printMH[perform];
 +!printCurrentPlanBelief[perform]: {~B current_plan(Goal,Source,Index,Actions)} <- print("DEBUG   print current belief   ","I believe that there is no current plan"),+!printMH[perform];
 
-+!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
-					<-
-					print("DEBUG   do actions   ","Performing action ",FirstAction),
-					+!doAction(FirstAction)[perform],
-					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
-					+current_plan(Goal,Source,Index,ActionsTail)
-					;
+//+!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
+//					<-
+//					print("DEBUG   do actions   ","Performing action ",FirstAction),
+//					+!doAction(FirstAction)[perform],
+//					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
+//					+current_plan(Goal,Source,Index,ActionsTail)
+//					;
 
 +!doAction(move_to(Loc))[perform]: {~B going(L1), ~B moving, ~B at(Loc), B location(Loc)
                                     } <-
@@ -1257,7 +1260,7 @@ speclist_has_maintain([H | T], Rest):-
 
 +!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("DEBUG   do action   ","already at",Loc);
 
-+!doAction(move_to(Loc))[perform]: {B moving} <- do_nothing;
++!doAction(move_to(Loc))[perform]: {B moving} <- print("DEBUG    do action   ","moving already"),do_nothing;
 
 +!reset_move_history[perform]: {B move_history(MH), B plan_index(Pindex)} <- -move_history(MH),+move_history([]),-plan_index(Pindex),+plan_index(0);
 

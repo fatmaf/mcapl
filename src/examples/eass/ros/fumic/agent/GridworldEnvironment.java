@@ -75,7 +75,9 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 Literal mb = new Literal("movebase_result");
                 mb.addTerm(new NumberTermImpl(mb_id));
                 mb.addTerm(new NumberTermImpl(mb_res));
-                addUniquePercept("movebase_result",mb);
+                if(mb_res != -1) {
+                    addUniquePercept("movebase_result", mb);
+                }
                 String at_loc_string = String.format("l%d_%d",robot_x,robot_y);
                 Literal at_loc = new Literal("at");
                 at_loc.addTerm(new Literal(at_loc_string));
