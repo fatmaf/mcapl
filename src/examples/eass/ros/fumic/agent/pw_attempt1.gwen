@@ -212,14 +212,25 @@ print("Abstraction agent moving to ",Loc,X,Y,Z), assert_shared(going(Loc)), asse
 							remove_shared(moving);
 
 // reached a location
-+at(Loc): {True} <-
++at(Loc): {B at(OtherLoc)} <-
+            remove_shared(at(OtherLoc)),
+            print("DEBUG   at  ","at ",OtherLoc," removed this "),
             assert_shared(at(Loc)),
 			+.lock,
 			print("DEBUG   at  ","at ",Loc),
 			+!visitedLoc(Loc)[perform],
 			-.lock;
 
--at(Loc): {True} <- remove_shared(at(Loc));
++at(Loc): {~B at(OtherLoc)} <-
+//            remove_shared(at(OtherLoc)),
+            assert_shared(at(Loc)),
+			+.lock,
+			print("DEBUG   at  ","at ",Loc),
+			+!visitedLoc(Loc)[perform],
+			-.lock;
+
+
+-at(Loc): {True} <- remove_shared(at(Loc)), print("DEBUG at   ","removing at ",Loc);
 // near a location and we have low radiation
 +near(Loc): {B radiation(low) } <-
 					print("DEBUG   near loc   ","Near ", Loc," with low radiation"),
@@ -362,7 +373,8 @@ plan_index(0)
 
 //plans
 plans([
-        plan(visit(l0_5), at(l0_0), 1, [move_to(l0_1), move_to(l0_2), move_to(l0_3), move_to(l0_4), move_to(l0_5)])
+        plan(visit(l0_5), at(l0_0), 1, [move_to(l0_1), move_to(l0_2), move_to(l0_3), move_to(l0_4), move_to(l0_5)]),
+        plan(visit(l0_5), at(l0_0), 1, [move_to(l0_1), move_to(l0_2), move_to(l0_3), move_to(l0_4), move_to(l0_5)]),
       ])
 //specs
 original_specification("Required",[visit(l0_5)])

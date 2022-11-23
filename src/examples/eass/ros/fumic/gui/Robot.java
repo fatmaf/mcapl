@@ -162,6 +162,7 @@ public class Robot extends JPanel {
                 if(read_values)
                 {
                     movebase_result = 3;
+                    movebase_id = this.x*10+this.y;
                     read_values = false;
                 } else
                 {

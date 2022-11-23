@@ -143,7 +143,7 @@ public class GridCell extends JLabel {
         setBackground(getFillColor());
         setVisible(true);
         setOpaque(true);
-        setText(String.format("%d,%d",xpos,ypos));
+        setText(String.format("%d: %d,%d",xpos*10+ypos,xpos,ypos));
         //  addMouseListener(m);
     }
 
