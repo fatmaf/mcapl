@@ -1,16 +1,15 @@
 package eass.ros.fumic.agent;
 
-import ail.syntax.Literal;
+import ail.syntax.*;
 import eass.mas.socket.EASSSocketClientEnvironment;
 import ail.mas.scheduling.NActionScheduler;
 import ail.util.AILSocketClient;
 import ajpf.util.AJPFLogger;
-import ail.syntax.Unifier;
-import ail.syntax.NumberTerm;
-import ail.syntax.NumberTermImpl;
-import ail.syntax.Predicate;
+import ros.msgs.geometry_msgs.Vector3;
 
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -18,12 +17,17 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
 
     String logname = "eass.ros.fumic.agent.GridworldEnvironment";
 
-    double radiation=0;
+    double radiation = 0;
     boolean received_started = false;
     String current_at_loc = null;
+    ArrayList<Predicate> currently_near = null;
+    int nearLb = 1;
+    int nearUb = 2;
+    boolean considerBehindLocsForNear = false;
+
     public GridworldEnvironment() {
         super();
-        super.scheduler_setup(this, new NActionScheduler(100));
+        super.scheduler_setup(this, new NActionScheduler(200));
     }
 
     @Override
@@ -47,7 +51,7 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 robot_x = socket.readInt();
                 robot_y = socket.readInt();
                 mb_id = socket.readInt();
-                mb_res= socket.readInt();
+                mb_res = socket.readInt();
                 rad_val = socket.readDouble();
                 started = socket.readInt();
                 readvalues = true;
@@ -57,14 +61,14 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 robot_x = socket.readInt();
                 robot_y = socket.readInt();
                 mb_id = socket.readInt();
-                mb_res= socket.readInt();
+                mb_res = socket.readInt();
                 rad_val = socket.readDouble();
                 started = socket.readInt();
                 readvalues = true;
             }
             if (readvalues) {
-                String toprint = String.format("read: movebase_result(%d,%d), radiation: %f, started: %d, xy:%d,%d", mb_id,mb_res, rad_val, started,robot_x,robot_y);
-                radiation=rad_val;
+                String toprint = String.format("read: movebase_result(%d,%d), radiation: %f, started: %d, xy:%d,%d", mb_id, mb_res, rad_val, started, robot_x, robot_y);
+                radiation = rad_val;
                 System.out.println(toprint);
                 if (started > 0) {
                     if (!received_started) {
@@ -75,16 +79,18 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 Literal mb = new Literal("movebase_result");
                 mb.addTerm(new NumberTermImpl(mb_id));
                 mb.addTerm(new NumberTermImpl(mb_res));
-                if(mb_res != -1) {
+                if (mb_res != -1) {
                     addUniquePercept("movebase_result", mb);
                 }
-                String at_loc_string = String.format("l%d_%d",robot_x,robot_y);
+                String at_loc_string = getLocName(robot_x, robot_y);
                 Literal at_loc = new Literal("at");
                 at_loc.addTerm(new Literal(at_loc_string));
                 // only add this new percept if it did not exist before
-                if(current_at_loc==null || !current_at_loc.equals(at_loc_string)) {
+                if (current_at_loc == null || !current_at_loc.equals(at_loc_string)) {
                     current_at_loc = at_loc_string;
                     addUniquePercept("at", at_loc);
+                    doNear(robot_x,robot_y);
+                    receive_inspect();
                 }
 
             }
@@ -94,6 +100,86 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
         }
 
 
+    }
+
+    //calculate all near within bounds distance
+    private ArrayList<Predicate> getNearLocs(int x, int y, int lb, int ub, boolean considerBehindLocs) {
+        ArrayList<String> nearLocs = new ArrayList<>();
+        ArrayList<Predicate> nearLocsPreds = new ArrayList<>();
+        // based on lb being 0 meaning we want distance 1
+        String locnameholder;
+        ArrayList<int[]> nearcoords = new ArrayList<>();
+        for (int i = ub; i > lb; i--) {
+            // so the locations are
+            // x+i, y / x, y+i / x, y-i
+            // we dont consider places behind us unless true
+            // if considerBehindLocs x-i / y
+            nearcoords.add(new int[]{x + i, y});
+            nearcoords.add(new int[]{x, y + i});
+            nearcoords.add(new int[]{x, y - i});
+            if (considerBehindLocs) {
+                nearcoords.add(new int[]{x - i, y});
+            }
+        }
+        for(int i = 0; i<nearcoords.size(); i++)
+        {
+            int xx = nearcoords.get(i)[0];
+            int yy = nearcoords.get(i)[1];
+            if(xx >= 0 && yy >=0 && xx <10 && yy <10)
+            {
+                locnameholder = getLocName(xx , yy);
+                nearLocs.add(locnameholder);
+                nearLocsPreds.add(getNearLocPred(locnameholder));
+
+            }
+        }
+        AJPFLogger.fine(logname,"Near " + x + " " + y);
+        //printing all the near locs
+        for (int i = 0; i < nearLocs.size(); i++) {
+            AJPFLogger.fine(logname,nearLocs.get(i));
+        }
+        return nearLocsPreds;
+    }
+
+    Predicate getNearLocPred(String locname) {
+        Predicate np = new Predicate("near");
+        np.addTerm(new Literal(locname));
+        return np;
+    }
+
+    void doNear(int x, int y) {
+
+        ArrayList<Predicate> nearlocs = getNearLocs(x, y, nearLb, nearUb, considerBehindLocsForNear);
+        if (currently_near == null) {
+            currently_near = new ArrayList<>();
+        }
+
+        // this is so we dont get multiple "near" percepts
+        // which may be bad actually
+        // if the percept is not in our new near locs
+        // we can remove it
+        for (Predicate p : currently_near) {
+            if (!nearlocs.contains(p)) {
+                removePercept(p);
+                AJPFLogger.warning(logname, "Removing percept " + p.toString());
+            }
+        }
+        // we add all the percepts that are in our new near locs
+        // not adding the ones that are already there (as in currently near)
+        for (Predicate p : nearlocs) {
+            if (!currently_near.contains(p)) {
+                addPercept(p);
+                AJPFLogger.warning(logname, "Adding percept " + p.toString());
+            }
+        }
+        // then we can set our currently near to this new thing
+        currently_near.clear();
+        currently_near.addAll(nearlocs);
+
+    }
+
+    private String getLocName(int x, int y) {
+        return String.format("l%d_%d", x, y);
     }
 
     public Unifier executeAction(String agName, ail.syntax.Action act) throws ail.util.AILexception {
@@ -107,12 +193,12 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
             NumberTerm ax = (NumberTerm) act.getTerm(3);
             NumberTerm ay = (NumberTerm) act.getTerm(4);
             NumberTerm az = (NumberTerm) act.getTerm(5);
-            move(lx.solve(),ly.solve(),lz.solve(),ax.solve(),ay.solve(),az.solve());
+            move(lx.solve(), ly.solve(), lz.solve(), ax.solve(), ay.solve(), az.solve());
         } else if ((actionname.equals("move")) && nterms == 3) {
             NumberTerm lx = (NumberTerm) act.getTerm(0);
             NumberTerm ly = (NumberTerm) act.getTerm(1);
             NumberTerm lz = (NumberTerm) act.getTerm(2);
-            move(lx.solve(),ly.solve(),lz.solve());
+            move(lx.solve(), ly.solve(), lz.solve());
         } else if (actionname.equals("keep_moving")) {
             NumberTerm period = (NumberTerm) act.getTerm(0);
             NumberTerm lx = (NumberTerm) act.getTerm(1);
@@ -121,7 +207,7 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
             NumberTerm ax = (NumberTerm) act.getTerm(4);
             NumberTerm ay = (NumberTerm) act.getTerm(5);
             NumberTerm az = (NumberTerm) act.getTerm(6);
-            keep_moving((int) period.solve(),lx.solve(),ly.solve(),lz.solve(),ax.solve(),ay.solve(),az.solve());
+            keep_moving((int) period.solve(), lx.solve(), ly.solve(), lz.solve(), ax.solve(), ay.solve(), az.solve());
         } else if (actionname.equals("stop_moving")) {
             stop_moving();
         } else if (actionname.equals("inspect")) {
@@ -144,11 +230,11 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
             myObj.nextLine();  // Read user input
         } else if (actionname.equals("get_random_coordinates")) {
             Random random = new Random();
-            double x = random.nextDouble()*20 - 10;
-            double y = random.nextDouble()*20 - 10;
+            double x = random.nextDouble() * 20 - 10;
+            double y = random.nextDouble() * 20 - 10;
             while (inaccessible(x, y)) {
-                x = random.nextDouble()*20 - 10;
-                y = random.nextDouble()*20 - 10;
+                x = random.nextDouble() * 20 - 10;
+                y = random.nextDouble() * 20 - 10;
             }
             NumberTerm lx = new NumberTermImpl(x);
             NumberTerm ly = new NumberTermImpl(y);
@@ -165,11 +251,11 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
     private boolean inaccessible(double x, double y) {
         if (x > 0.6 && x < 4.2 && y > -7.3 && y < -3) {
             return true;
-        } else if (x > -8 && x < -5 && y > -9 && y < -6.5 ) {
+        } else if (x > -8 && x < -5 && y > -9 && y < -6.5) {
             return true;
         } else if (x > 7.5 && x < 8.6 && y < -4 && y > -7.2) {
             return true;
-        } else if (x > -1.1 && x < 2.1 && y > 3 && y < 4.2 ) {
+        } else if (x > -1.1 && x < 2.1 && y > 3 && y < 4.2) {
             return true;
         } else if (x > 8.7) {
             return true;
@@ -198,24 +284,24 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
 
 
         AILSocketClient socket = getSocket();
-        socket.writeInt((int)lx);
-        socket.writeInt((int)ly);
+        socket.writeInt((int) lx);
+        socket.writeInt((int) ly);
     }
 
     public void move(double lx, double ly, double lz) {
 
 
         AILSocketClient socket = getSocket();
-        socket.writeInt((int)lx);
-        socket.writeInt((int)ly);
+        socket.writeInt((int) lx);
+        socket.writeInt((int) ly);
     }
 
     public void keep_moving(int period, double lx, double ly, double lz, double ax, double ay, double az) {
 
 
         AILSocketClient socket = getSocket();
-        socket.writeInt((int)lx);
-        socket.writeInt((int)ly);
+        socket.writeInt((int) lx);
+        socket.writeInt((int) ly);
     }
 
     public void stop_moving() {
@@ -228,20 +314,28 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
 
     public void receive_inspect() {
         String status = null;
+        Literal rad = new Literal("radiation");
         System.out.println("Radiation: " + radiation);
-        if (radiation >= 250 ) {
-            status = "red";
-            Literal rad = new Literal("danger_red");
-            addUniquePercept("danger_red",rad);
+        if (radiation >= 250) {
+//            status = "red";
+//            Literal rad = new Literal("danger_red");
+//            addUniquePercept("danger_red", rad);
+
+            rad.addTerm(new Literal("high"));
+
         } else if (radiation >= 120) {
-            status = "orange";
-            Literal rad = new Literal("danger_orange");
-            addUniquePercept("danger_orange",rad);
+            rad.addTerm(new Literal("almosthigh"));
+//            status = "orange";
+//            Literal rad = new Literal("danger_orange");
+//            addUniquePercept("danger_orange", rad);
         } else {
-            status = "green";
+//            status = "green";
+            rad.addTerm(new Literal("almosthigh"));
         }
+        addUniquePercept("radiation",rad);
 //        publish("radiationStatus",new PrimitiveMsg<String>(status));
     }
+
     @Override
     public boolean done() {
         return false;
