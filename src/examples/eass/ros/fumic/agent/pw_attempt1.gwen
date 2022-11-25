@@ -192,7 +192,8 @@ print("Abstraction agent moving to ",Loc,X,Y,Z), assert_shared(going(Loc)), asse
 +!move_cleanup[perform]: {~B moving, ~B going(Loc) } <- print("AE DEBUG   move clean up   ","move clean up called for no reason");
 
 // what to do when a location has been visited
-+!visitedLoc(Loc)[perform] : {B location_count(C), B visited(Loc,Cy)} //this is different from what I have but I think its fine, well is it? no its not so i'm changing it
++!visitedLoc(Loc)[perform] : {B location_count(C), B visited(Loc,Cy)}
+ //this is different from what I have but I think its fine, well is it? no its not so i'm changing it
 						<- print("AE DEBUG   visited loc   ","already visited this location so not adding it");
 
 // do we put this in the abstraction engine or not? for now lets keep it here
@@ -212,26 +213,30 @@ print("Abstraction agent moving to ",Loc,X,Y,Z), assert_shared(going(Loc)), asse
 							remove_shared(moving);
 
 // reached a location
-+at(Loc): {B at(OtherLoc)} <-
++on(Loc): {B at(Loc)} <- do_nothing;
+
++on(Loc): {B at(OtherLoc)} <-
+            +.lock,
             remove_shared(at(OtherLoc)),
-            print("AE DEBUG   at  ","at ",OtherLoc," removed this "),
+            print("AE DEBUG   at  ","at ",OtherLoc," removed this "," adding at ",Loc),
             assert_shared(at(Loc)),
-			+.lock,
-			print("AE DEBUG   at  ","at ",Loc),
+
+//			print("AE DEBUG   at  ","at ",Loc),
 			+!visitedLoc(Loc)[perform],
 			-.lock;
 
-+at(Loc): {~B at(OtherLoc)} <-
++on(Loc): {~B at(OtherLoc)} <-
+            +.lock,
 //            remove_shared(at(OtherLoc)),
             assert_shared(at(Loc)),
-			+.lock,
-			print("AE DEBUG   at  ","at ",Loc),
+
+			print("AE DEBUG   at  ","at ",Loc,"  no belief of other loc"),
 			+!visitedLoc(Loc)[perform],
 			-.lock;
 
 
--at(Loc): {True} <- remove_shared(at(Loc)), print("AE DEBUG at   ","removing at ",Loc);
-
+-on(Loc): {True} <- remove_shared(at(Loc)), print("AE DEBUG at   ","removing at ",Loc);
+//whenever you get an at loc percept, make sure to remove any you have shared before
 //+near(Loc): {True} <- print("AE DEBUG   near   ",Loc);
 
 // near a location and we have low radiation
@@ -986,8 +991,10 @@ speclist_has_maintain([H | T], Rest):-
 
                                   print("RE DEBUG   ","add plan annotations   ","Old plans",Plans),
                                   print("RE DEBUG   ","add plan annotations   ","Annotated plans",AnnotatedPlans),
-                                  -plans(Plans),
+                                   +.lock,
                                   +plans(AnnotatedPlans),
+                                  -plans(Plans),
+ -.lock,
                                   +initial_setup_complete;
 +!add_plan_annotations_action[perform]: {B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_before_annotations_action[perform], -.lock;
  +!update_before_beliefs[perform]: {B specification("befores","unknown",UB),
@@ -1017,8 +1024,10 @@ speclist_has_maintain([H | T], Rest):-
                                                                    <-
                                                                    print("RE DEBUG   ","update before annotations   ","Old plans",Plans),
                                                                    print("RE DEBUG   ","update before annotations   ","Updated plans ",UpdatedPlans),
-                                                                   -plans(Plans),
-                                                                   +plans(UpdatedPlans);
+                                                                   +.lock,
+                                                                                                                                      +plans(UpdatedPlans),
+                                                                                                                                      -plans(Plans)
+                                                                                                                                      ,-.lock;
 
 /**************************************/
 // so now we've got plans annotated.
@@ -1204,6 +1213,13 @@ speclist_has_maintain([H | T], Rest):-
 
 // then you set about achieving the plan
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {B moving} <- /*print("RE DEBUG   achieve plan   ","moving"),*/do_nothing;
+//+!do_all_plan_steps(Goal,Source,Index)[achieve]: { B check_violations(AnyLoc), ~B check_maintain_violations(Percept,Maintainspec)
+//                        }
+//					<-do_nothing;
+//+!do_all_plan_steps(Goal,Source,Index)[achieve]: { ~B check_violations(AnyLoc), B check_maintain_violations(Percept,Maintainspec)}
+//					<-do_nothing;
+//+!do_all_plan_steps(Goal,Source,Index)[achieve]: { B check_violations(AnyLoc), B check_maintain_violations(Percept,Maintainspec)}
+//					<-do_nothing;
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {B current_plan(Goal,Source,Index,[]),
                                         ~B moving,
                                         ~B moving_back} /*done*/
@@ -1249,7 +1265,8 @@ speclist_has_maintain([H | T], Rest):-
 									;
 //+!do_all_plan_steps(Goal,Source,Index)[achieve]: {True} <-print("RE DEBUG   achieve plan   ","no shit sherlock",Goal,Index);//printstate;
 
-+!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
++!doActions[perform]: {  B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])
+                        }
 					<-
 					print("RE DEBUG   achieve plan   ","Performing action ",FirstAction),
 					+!doAction(FirstAction)[perform],
@@ -1258,6 +1275,7 @@ speclist_has_maintain([H | T], Rest):-
 					print("RE DEBUG   achieve plan   ","Added new action set ",ActionsTail),
 					+!printCurrentPlanBelief[perform]
 					;
+
 +!printCurrentPlanBelief[perform]: {B current_plan(Goal,Source,Index,Actions)} <- print("RE DEBUG   print current belief   ","I believe that the current plan has",Goal,Source,Index,Actions,"Done printing current plan"),+!printMH[perform];
 +!printCurrentPlanBelief[perform]: {~B current_plan(Goal,Source,Index,Actions)} <- print("RE DEBUG   print current belief   ","I believe that there is no current plan"),+!printMH[perform];
 
@@ -1272,6 +1290,8 @@ speclist_has_maintain([H | T], Rest):-
 +!doAction(move_to(Loc))[perform]: {~B going(L1), ~B moving, ~B at(Loc), B location(Loc)
                                     } <-
 							print("RE DEBUG   do action   ","moving to ",Loc),  perf(move(Loc));
+
+
 
 +!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("RE DEBUG   do action   ","already at",Loc);
 
@@ -1311,6 +1331,7 @@ speclist_has_maintain([H | T], Rest):-
  +!stop_current_plan(Percept,[])[perform]: {True} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan");
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]: {True} <- print("RE DEBUG   stop current plan   ","Stop plan"), +violation_detected, print("RE DEBUG   stop current plan   ","Need to update the specification for this plan"),
                                                 +!revise_annotations_action(Percept)[perform];
+
 +!revise_annotations_action_property(near(OtherLoc))[perform]:{
                 B current_plan(Goal,Source,Index,Actions),
               B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
@@ -1330,6 +1351,7 @@ speclist_has_maintain([H | T], Rest):-
                           print("RE DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
                           print("RE DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
                           +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                          printstate,
                           +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                         -.lock
                           ;
@@ -1354,6 +1376,7 @@ speclist_has_maintain([H | T], Rest):-
                           print("RE DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
                           print("RE DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
                           +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                          printstate,
                           +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                         -.lock
                           ;
@@ -1378,6 +1401,7 @@ speclist_has_maintain([H | T], Rest):-
                           print("RE DEBUG   revise annotations property   ","Updated Vannots",UpdatedVannots),
                           print("RE DEBUG   revise annotations property   ","Updated Bannots",UpdatedBannots),
                           +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                          printstate,
                           +!update_plan_in_plans(OtherLoc,Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                         -.lock
                           ;
@@ -1402,6 +1426,7 @@ speclist_has_maintain([H | T], Rest):-
                                                           print("RE DEBUG   revise annotations   ","Updated Vannots",UpdatedVannots),
                                                           print("RE DEBUG   revise annotations   ","Updated Bannots",UpdatedBannots),
                                                           +!printPlan(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
+                                                          printstate,
                                                           +!update_plan_in_plans(Goal,Source,Index,AllActions,UpdatedVannots,UpdatedBannots)[perform],
                                                         -.lock
                                                           ;
@@ -1410,20 +1435,23 @@ speclist_has_maintain([H | T], Rest):-
                                     B plans(Plans),
                                     B replace_plan_annots_in_plans_revise_for_loc(Loc,Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                     }    <-
+                                    +.lock,
+                                    print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
+                                                                               +plans(NewPlans),
                                             print("RE DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
                                            -plans(Plans),
-                                           print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
-                                           +plans(NewPlans),
+                                    -.lock,
                                            +!stop_plan[achieve]
                                       ;
 
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
                             B plans(Plans),   B replace_plan_annots_in_plans(Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                                                                } <-
+                                                                               print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
+                                                                                                          +.lock,                                                     +plans(NewPlans),
                                                                                print("RE DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
                                                                                -plans(Plans),
-                                                                               print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
-                                                                               +plans(NewPlans),
+ -.lock,
                                                                                +!stop_plan[achieve]
                                                                               ;
 
@@ -1443,20 +1471,23 @@ speclist_has_maintain([H | T], Rest):-
 +!begin_agent[perform]: {~B req_visits_have_plans} <- print("RE  Can not proceed as all required visits do not have plans");
 +!printBeliefPlans[perform] : {B plans(Plans)} <- print("RE DEBUG   print plan beliefs   ","Plans",Plans);
 
-+check_violations(Loc): {B initial_setup_complete} <-print("RE DEBUG   got check violations ",Loc), +!get_violations(near(Loc))[perform],remove_shared(check_violations(Loc));
++check_violations(Loc): {B initial_setup_complete} <- printstate,print("RE DEBUG   got check violations ",Loc),remove_shared(check_violations(Loc)), +!get_violations(near(Loc))[perform];
 
-+check_violations(Loc): {~B initial_setup_complete} <-print("RE DEBUG   got check violations ",Loc,"  initial setup not complete so doing nothing"), remove_shared(check_violations(Loc));
++check_violations(Loc): {~B initial_setup_complete} <-printstate,print("RE DEBUG   got check violations ",Loc,"  initial setup not complete so doing nothing"), remove_shared(check_violations(Loc));
 
-+check_maintain_violations(near(Loc),radiation(RadLevel)): {B initial_setup_complete, B specification("Maintain",MSpecs)} <-
++check_maintain_violations(near(Loc),radiation(RadLevel)): {B initial_setup_complete, B specification("Maintain",MSpecs)} <-printstate,
 					+.lock,
+
+					remove_shared(check_maintain_violations(near(Loc),radiation(RadLevel))),
 					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
+					printstate,
 					+!revise_annotations_action_property(near(Loc))[perform],
-					remove_shared(check_maintain_violations(near(Loc),radiation(RadLevel))),
 					-.lock ;
-+check_maintain_violations(near(Loc),radiation(RadLevel)): {B initial_setup_complete, ~B specification("Maintain",MSpecs)} <-
++check_maintain_violations(near(Loc),radiation(RadLevel)): {B initial_setup_complete, ~B specification("Maintain",MSpecs)} <-printstate,
 					+.lock,
-                    +!get_violations(near(Loc))[perform],
+
 					remove_shared(check_maintain_violations(near(Loc),radiation(RadLevel))),
+                    +!get_violations(near(Loc))[perform],
 					-.lock ;
 
 +check_maintain_violations(Loc): {~B initial_setup_complete} <-

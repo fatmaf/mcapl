@@ -83,12 +83,12 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                     addUniquePercept("movebase_result", mb);
                 }
                 String at_loc_string = getLocName(robot_x, robot_y);
-                Literal at_loc = new Literal("at");
+                Literal at_loc = new Literal("on");
                 at_loc.addTerm(new Literal(at_loc_string));
                 // only add this new percept if it did not exist before
                 if (current_at_loc == null || !current_at_loc.equals(at_loc_string)) {
                     current_at_loc = at_loc_string;
-                    addUniquePercept("at", at_loc);
+                    addUniquePercept("on", at_loc);
                     doNear(robot_x,robot_y);
                     receive_inspect();
                 }
