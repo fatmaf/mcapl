@@ -7,6 +7,8 @@ import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Robot extends JPanel {
 
@@ -15,6 +17,7 @@ public class Robot extends JPanel {
     // Declaring the color
     // Custom declaration
     public static final String ANSI_YELLOW = "\u001B[33m";
+
 
     Ellipse2D circle;
     private Color col;
@@ -78,6 +81,7 @@ public class Robot extends JPanel {
             }
         });
         setBackground(Color.WHITE);
+        init_radiation();
         start_server();
     }
 
@@ -114,6 +118,67 @@ public class Robot extends JPanel {
 
     }
 
+    private HashMap<Point,Double> radvals=null;
+
+    private ArrayList<Point> getNeighbours(Point p)
+    {
+        Point[] genPoints = {new Point(p.x,p.y-1),
+                new Point(p.x,p.y+1),
+                new Point(p.x-1,p.y),
+                new Point(p.x+1,p.y)
+        };
+        ArrayList<Point> points = new ArrayList<>();
+        for(Point pp: genPoints)
+        {
+            if(pp.x >= 0 && pp.y>= 0)
+            {
+                points.add(pp);
+            }
+        }
+        return points;
+    }
+    private void init_radiation()
+    {
+        if(radvals == null)
+        {
+            Point[] radPoints={new Point(2,2), new Point(2,0)};
+            radvals = new HashMap<>();
+            double almost_high = 125.34;
+            double high = 261.12;
+
+            // rad points
+            for (Point p: radPoints)
+            {
+                // for each point
+                // get the neighbours
+                ArrayList<Point> ns = getNeighbours(p);
+                for (Point np: ns)
+                {
+                    radvals.put(np,almost_high);
+                }
+                // and set it almost high
+                radvals.put(p,high);
+            }
+        }
+    }
+
+    private boolean set_radiation()
+    {
+        Point p = new Point(x,y);
+        if(radvals.containsKey(p))
+        {
+            setRadiation_value(radvals.get(p));
+            return true;
+        }
+        else {
+            setRadiation_value(0.0);
+        }
+        return false;
+    }
+    public void setRadiation_value(double radiation_value)
+    {
+        this.radiation_value = radiation_value;
+    }
     private void readValues() {
         if (controlled) {
             try {
@@ -135,6 +200,8 @@ public class Robot extends JPanel {
     public void close() {
         if (controlled) {
             socketServer.close();
+            colorPrint("Robot socket connection closed");
+            controlled = false;
         }
     }
 
@@ -157,6 +224,7 @@ public class Robot extends JPanel {
 
     //write values
     public void writeValues() {
+        set_radiation();
         if (controlled) {
             try {
                 if(read_values)

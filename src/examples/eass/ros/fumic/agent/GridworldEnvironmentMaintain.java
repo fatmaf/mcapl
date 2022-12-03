@@ -1,19 +1,16 @@
 package eass.ros.fumic.agent;
 
-import ail.syntax.*;
-import eass.mas.socket.EASSSocketClientEnvironment;
 import ail.mas.scheduling.NActionScheduler;
+import ail.syntax.*;
 import ail.util.AILSocketClient;
 import ajpf.util.AJPFLogger;
-import ros.msgs.geometry_msgs.Vector3;
+import eass.mas.socket.EASSSocketClientEnvironment;
 
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
-public class GridworldEnvironment extends EASSSocketClientEnvironment {
+public class GridworldEnvironmentMaintain extends EASSSocketClientEnvironment {
 
     String logname = "eass.ros.fumic.agent.GridworldEnvironment";
 
@@ -25,7 +22,7 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
     int nearUb = 1;
     boolean considerBehindLocsForNear = false;
 
-    public GridworldEnvironment() {
+    public GridworldEnvironmentMaintain() {
         super();
         super.scheduler_setup(this, new NActionScheduler(200));
     }
@@ -67,8 +64,8 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
                 readvalues = true;
             }
             if (readvalues) {
-                String toprint = String.format("read: movebase_result(%d,%d), radiation (but set to 0): %f, started: %d, xy:%d,%d", mb_id, mb_res, rad_val, started, robot_x, robot_y);
-                radiation = 0;//rad_val;
+                String toprint = String.format("read: movebase_result(%d,%d), radiation: %f, started: %d, xy:%d,%d", mb_id, mb_res, rad_val, started, robot_x, robot_y);
+                radiation = rad_val;
                 System.out.println(toprint);
                 if (started > 0) {
                     if (!received_started) {
@@ -102,8 +99,40 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
 
     }
 
+    private ArrayList<Predicate> getHardCodedNearLocs(int x, int y)
+    {
+        int xx,yy;
+        if(x ==1 && y==0){
+            xx =2;
+            yy=0;
+        }
+        else if(x==1 && y==1)
+        {
+            xx = 2;
+            yy= 2;
+        }
+        else
+        {
+            xx = -1;
+            yy = -1;
+        }
+        ArrayList<Predicate> nearLocsPreds = new ArrayList<>();
+        if(xx != -1 && yy!=-1) {
+            String locnameholder = getLocName(xx, yy);
+//            nearLocs.add(locnameholder);
+            nearLocsPreds.add(getNearLocPred(locnameholder));
+        }
+        return nearLocsPreds;
+
+    }
     //calculate all near within bounds distance
     private ArrayList<Predicate> getNearLocs(int x, int y, int lb, int ub, boolean considerBehindLocs) {
+
+        return getHardCodedNearLocs(x, y);
+        //return getNearLocsReal(x,y,lb,ub,considerBehindLocs);
+    }
+        private ArrayList<Predicate> getNearLocsReal(int x, int y, int lb, int ub, boolean considerBehindLocs)
+        {
         ArrayList<String> nearLocs = new ArrayList<>();
         ArrayList<Predicate> nearLocsPreds = new ArrayList<>();
         // based on lb being 0 meaning we want distance 1
@@ -182,8 +211,8 @@ public class GridworldEnvironment extends EASSSocketClientEnvironment {
         return String.format("l%d_%d", x, y);
     }
 
-    public Unifier executeAction(String agName, ail.syntax.Action act) throws ail.util.AILexception {
-        Unifier u = new ail.syntax.Unifier();
+    public Unifier executeAction(String agName, Action act) throws ail.util.AILexception {
+        Unifier u = new Unifier();
         String actionname = act.getFunctor();
         int nterms = act.getTermsSize();
         if ((actionname.equals("move")) && nterms == 6) {

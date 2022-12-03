@@ -3,6 +3,8 @@ package eass.ros.fumic.gui;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class WindowCreateGrid extends WindowBase {
     private JPanel basePanel;
@@ -14,6 +16,7 @@ public class WindowCreateGrid extends WindowBase {
     private JButton startButton;
     private JButton moveButton;
     private JButton restartButton;
+    private JPanel gridBasePanel;
     private GridCell[][] cells;
     private Robot robot;
     int numX;
@@ -32,19 +35,39 @@ public class WindowCreateGrid extends WindowBase {
     CellType currentCellType = CellType.NONE;
 
     private void move_robot_socket() {
-        // first we need to remove the robot
-        remove_robot_from_cell();
+        // check if we need to move the robot
+        int old_x = robot.x;
+        int old_y = robot.y;
+
+
         //update parameters
         robot.updateParameters();
-        // add robot to cell
-        add_robot_to_cell();
+        if(robot.x!= old_x || robot.y!=old_y) {
+            //first we need to remove the robot
+            remove_robot_from_cell(old_x,old_y);
+
+            // add robot to cell
+            add_robot_to_cell();
+        }
 
     }
 
     private void add_robot_to_cell() {
         int rx = robot.x;
         int ry = robot.y;
+//        System.out.println("x "+rx+"y "+ry+"rad val "+robot.radiation_value);
         cells[ry][rx].add(robot);
+        gridPanel.repaint();
+        gridPanel.revalidate();
+    }
+
+
+    private void remove_robot_from_cell(int old_x, int old_y) {
+        int rx = old_x;
+        int ry = old_y;
+
+//        String toprint = String.format("[%d,%d]",ry,rx);
+        cells[ry][rx].remove(robot);
         gridPanel.repaint();
         gridPanel.revalidate();
     }
@@ -65,13 +88,17 @@ public class WindowCreateGrid extends WindowBase {
 
     private void move_robot_button() {
 
+    if(!robot.controlled) {
         // first we need to remove the robot
         remove_robot_from_cell();
 
         move_robot_left();
         // add robot to cell
         add_robot_to_cell();
-
+    }
+    else {
+        System.out.println("Please stop socket server before moving robot through the button");
+    }
     }
 
 
@@ -130,8 +157,11 @@ public class WindowCreateGrid extends WindowBase {
 
         gridPanel.setFocusable(true);
         gridPanel.requestFocusInWindow();
-
+        //set_radiation();
         initialise_robot();
+
+        // a random test
+        //
 
 
         moveButton.addActionListener(new ActionListener() {
@@ -176,7 +206,7 @@ public class WindowCreateGrid extends WindowBase {
 
 
     public static void main(String[] args) {
-        WindowBase wb = new WindowCreateGrid(10, 10);
+        WindowBase wb = new WindowCreateGrid(5, 5);
         wb.newWindow();
     }
 }
