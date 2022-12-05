@@ -1380,43 +1380,48 @@ B current_plan(Goal,Source,Index,Actions)}
 							<- print("RE DEBUG   update move history   ","isnt anywhere");
 
 +!update_move_history[perform] : {B at(Loc), B move_history(MH), B plan_index(Pindex)}
-							<-
-						+.lock,
-//						+!visitedLoc(Loc)[perform],
-					    +!printMH("RE DEBUG   update move history   Before update ")[perform],
-						-move_history(MH),
-						+move_history([move_to(Loc) | MH]),
-						sum(Pindex,1,PindexOne),
-						-plan_index(Pindex),
-						+plan_index(PindexOne),
-						+!printMH("RE DEBUG update move history   After update ")[perform],
-						-.lock;
+    <-
+    +.lock,
+    +!printMH("RE DEBUG   update move history   Before update ")[perform],
+    -move_history(MH),
+    +move_history([move_to(Loc) | MH]),
+    sum(Pindex,1,PindexOne),
+    -plan_index(Pindex),
+    +plan_index(PindexOne),
+    +!printMH("RE DEBUG update move history   After update ")[perform],
+    -.lock;
 
 
 +!get_violations(Percept)[perform]: {
-B plans(Plans),
-                                ~B violation_detected,
-                                B specification("Can violate",Specs)
-                            ,B can_violate(Percept,Specs,CouldViolateSpecs)
-                            } <-
-                            print("RE DEBUG   get violations   ",Percept," could violate ",CouldViolateSpecs, " from ", Specs),
-                            +!stop_current_plan(Percept,CouldViolateSpecs)[perform];
+        B plans(Plans),
+        ~B violation_detected,
+        B specification("Can violate",Specs)
+        ,B can_violate(Percept,Specs,CouldViolateSpecs)
+        } <-
+        print("RE DEBUG   get violations   ",Percept," could violate ",CouldViolateSpecs, " from ", Specs),
+        +!stop_current_plan(Percept,CouldViolateSpecs)[perform];
 
-+!get_violations(Percept)[perform]: {B plans(Plans),
-                                B violation_detected
-                            } <-
-                           do_nothing;
++!get_violations(Percept)[perform]: {
+        B plans(Plans),
+        B violation_detected
+        } <-
+       do_nothing;
+
  +!stop_current_plan(Percept,[])[perform]: {B plans(Plans)} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan");
- +!stop_current_plan(Percept,CouldViolateSpecs)[perform]: {B plans(Plans)} <- print("RE DEBUG   stop current plan   ","Stop plan"), +violation_detected, print("RE DEBUG   stop current plan   ","Need to update the specification for this plan"),
-                                                +!revise_annotations_action(Percept)[perform];
+
+ +!stop_current_plan(Percept,CouldViolateSpecs)[perform]:
+                            {B plans(Plans)} <-
+                            print("RE DEBUG   stop current plan   ","Stop plan"), +violation_detected, print("RE DEBUG   stop current plan   ","Need to update the specification for this plan"),
+
+                            +!revise_annotations_action(Percept)[perform];
 
 +!revise_annotations_action_property(near(OtherLoc))[perform]:{
-B plans(Plans),
-                B current_plan(Goal,Source,Index,Actions),
+              B plans(Plans),
+              B current_plan(Goal,Source,Index,Actions),
               B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
               B at(Loc)
-              ,B plan_index(Pindex)
-              ,B revise_annotations(Loc,near(OtherLoc),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
+             ,B plan_index(Pindex)
+             ,B revise_annotations(Loc,near(OtherLoc),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
                   }
                           <-
                           print("RE DEBUG   revise annotations property   ","Revising annotations"),
@@ -1494,7 +1499,7 @@ B plans(Plans),
 //
                           ;
 
-+!revise_annotations_action_property(near(OtherLoc))[perform]:{True} <- printstate, print("Error near ",OtherLoc);
+
 
 +!revise_annotations_action(Percept)[perform]: {B plans(Plans),
                       B current_plan(Goal,Source,Index,Actions),
@@ -1573,6 +1578,7 @@ print("RE DEBUG   got check violations ",Loc,"  initial setup not complete so do
 +check_maintain_violations(near(Loc),radiation(RadLevel)): {B plans(Plans),
     B initial_setup_complete, B specification("Maintain",MSpecs)} <-
 					remove_shared(check_maintain_violations(near(Loc),radiation(RadLevel))),
+
 					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
 					+!revise_annotations_action_property(near(Loc))[perform]
 					 ;
