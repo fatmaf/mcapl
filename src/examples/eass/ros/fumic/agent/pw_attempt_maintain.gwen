@@ -1032,8 +1032,9 @@ B locations_of_interest(Locs),
                                   print("RE DEBUG   ","add plan annotations   ","Old plans",Plans),
                                   print("RE DEBUG   ","add plan annotations   ","Annotated plans",AnnotatedPlans),
                                    +.lock,
+                                              -plans(Plans),
                                   +plans(AnnotatedPlans),
-                                  -plans(Plans),
+
                                                                     +initial_setup_complete,
                                                                                                        					+!get_specifications_status[perform],
  -.lock
@@ -1069,8 +1070,9 @@ B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_
            print("RE DEBUG   ","update before annotations   ","Old plans",Plans),
            print("RE DEBUG   ","update before annotations   ","Updated plans ",UpdatedPlans),
            +.lock,
+            -plans(Plans),
                                                                               +plans(UpdatedPlans),
-                                                                              -plans(Plans),
+
                                                                               printstate
                                                                               ,-.lock;
 
@@ -1365,12 +1367,12 @@ B current_plan(Goal,Source,Index,Actions)}
                                     } <-
 							print("RE DEBUG   do action   ","moving to ",Loc),  perf(move(Loc));
 
-
-
 +!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("RE DEBUG   do action   ","already at",Loc);
 
 +!doAction(move_to(Loc))[perform]: {B moving} <- print("RE DEBUG    do action   ","moving already"),do_nothing;
 
++!doAction(move_to(Loc))[perform]: {B plans(Plans)} <- print("RE DEBUG   do action   ","have plans but something else is missing "),printstate;
++!doAction(move_to(Loc))[perform]: {True} <- print("RE DEBUG   do action   ","hmmm"),printstate;
 +!reset_move_history[perform]: {B move_history(MH), B plan_index(Pindex)} <- -move_history(MH),+move_history([]),-plan_index(Pindex),+plan_index(0),
 									+!update_move_history[perform];
 
@@ -1522,10 +1524,11 @@ B plans(Plans),
                                     B replace_plan_annots_in_plans_revise_for_loc(Loc,Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                     }    <-
                                     +.lock,
-                                    print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
-                                                                               +plans(NewPlans),
-                                            print("RE DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
-                                           -plans(Plans),
+                                     print("RE DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
+                                                                               -plans(Plans),
+                                           print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
+                                                                                                                          +plans(NewPlans),
+
                                                                                       +!stop_plan[achieve],
                                     -.lock
 
@@ -1536,11 +1539,11 @@ B plans(Plans),
                                                                                } <-
 
                           +.lock,
-                            print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
-                          +plans(NewPlans),
                            print("RE DEBUG   update plan in plans   ","Updating violated annots Dropping old plans ",Plans),
                            -plans(Plans),
 
+                            print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
+                          +plans(NewPlans),
                            +!stop_plan[achieve],
                             -.lock
                           ;

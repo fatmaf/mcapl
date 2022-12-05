@@ -5,7 +5,7 @@ import eass.mas.socket.EASSSocketClientEnvironment;
 import ail.mas.scheduling.NActionScheduler;
 import ail.util.AILSocketClient;
 import ajpf.util.AJPFLogger;
-import ros.msgs.geometry_msgs.Vector3;
+//import ros.msgs.geometry_msgs.Vector3;
 
 
 import java.lang.reflect.Array;
