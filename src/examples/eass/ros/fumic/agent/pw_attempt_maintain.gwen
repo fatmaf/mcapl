@@ -142,6 +142,7 @@ print("AE DEBUG   moving to ",Loc," o",X,Y,Z,"o "), assert_shared(going(Loc)), a
 // the results of ros movebase
 +movebase_result(Id,3) : { B moving, B going(Loc) } <-
 						print("AE DEBUG   movebase result 3   ","Movement to location ",Loc," ended with success ","movebase id ",Id),
+						assert_shared(moved),
 						+!move_cleanup[perform];
 //+movebase_result(Id,3) : {True} <- printstate;
 +movebase_result(Id,3): {~B moving, ~B going(Loc)} <- print("AE DEBUG   removing movebase result because no movement"), -movebase_result(Id,3);
@@ -403,16 +404,22 @@ plan_index(0)
 //plans
 plans([
     plan(visit(l4_0), at(l0_0), 1, [move_to(l0_0), move_to(l1_0), move_to(l2_0), move_to(l3_0), move_to(l4_0)]),
+    plan(visit(l4_0), at(l0_0), 2, [move_to(l0_1), move_to(l0_2), move_to(l0_3), move_to(l0_4), move_to(l1_4), move_to(l2_4), move_to(l3_4), move_to(l4_4), move_to(l4_3),move_to(l4_2), move_to(l4_1),move_to(l4_0)]),
     plan(visit(l3_4), at(l0_0), 1, [move_to(l1_1), move_to(l2_2), move_to(l3_3), move_to(l3_4)]),
     plan(visit(l3_4), at(l0_0), 2, [move_to(l0_1), move_to(l0_2), move_to(l0_3), move_to(l0_4), move_to(l1_4), move_to(l2_4), move_to(l3_4)]),
     plan(visit(l4_0), at(l3_4), 1, [move_to(l4_4), move_to(l4_3), move_to(l4_2), move_to(l4_1),move_to(l4_0)]),
     plan(visit(l3_4), at(l4_0), 1, [move_to(l4_1), move_to(l4_2),move_to(l4_3), move_to(l4_4), move_to(l3_4)])
       ])
 //specs
-original_specification("Required",[visit(l4_0), visit(l3_4)])
-//,maintain(radiation(low))])
-//original_specification("Preferred",[avoid(l2_0),avoid(l2_2),before(l4_0,l4_3)])
-original_specification("Preferred",[maintain(radiation(low)),before(l4_0,l4_3)])
+
+original_specification("Required",[visit(l4_0)])
+original_specification("Preferred",[maintain(radiation(low))])
+
+
+//original_specification("Required",[visit(l4_0), visit(l3_4)])
+////,maintain(radiation(low))])
+////original_specification("Preferred",[avoid(l2_0),avoid(l2_2),before(l4_0,l4_3)])
+//original_specification("Preferred",[maintain(radiation(low)),before(l4_0,l4_3)])
 
 // plan length for bookkeeping
 max_plan_len(20)
@@ -1153,9 +1160,10 @@ B plans(Plans),
 // choose a plan and add all the annotations from that plan
 // that you care about i.e. the ones in your specifications
 // to a possible violations list
-+!choose_first_plan([])[perform]: {B plans(Plans)} <- print("RE DEBUG   choose first plan   ","No valid plans so we are all done"), +!print_specification_status[perform]
++!choose_first_plan([])[perform]: {B plans(Plans)} <- print("RE DEBUG   choose first plan   ","No valid plans so we are all done"), +no_valid_plans, +!print_specification_status[perform]
 //, printstate
 ;
++at(Loc):{B no_valid_plans} <- print("RE DEBUG   ","at ",Loc,"  I seem to have moved so will attempt to find new plans"), -no_valid_plans, +!get_new_plan[perform];
 
 +!choose_first_plan(ValidPlans)[perform]: {B plans(Plans),
         B get_first_plan(ValidPlans,plan(Goal,Source,Index,Actions,Vannots,Bannots))
@@ -1166,6 +1174,7 @@ B plans(Plans),
 
             }
             <-
+            print("RE DEBUG   choose first plan   ","Unknown specs  ",USpecs),
             print("RE DEBUG   choose first plan   ","Selecting plan")
             ,+!printPlan(Goal,Source,Index,Actions,Vannots,Bannots)[perform]
 
@@ -1173,6 +1182,7 @@ B plans(Plans),
             ,+specification("Can violate",CanViolate)
 
             ,print("RE DEBUG   choose first plan   ","Possible plan violations",PossibleViolations)
+            ,print("RE DEBUG   choose first plan   ","can violate ",CanViolate)
             ,+!do_all_plan_steps(Goal,Source,Index)[achieve]
             ;
 
@@ -1257,6 +1267,7 @@ B move_back_list([]), ~B moving
 					  -cancelled_goal,
 					  -moving_back,
 					  -violation_detected,
+					  -stopping_plan,
 					  +!get_new_plan[perform],
 					  -.lock
 					  ;
@@ -1337,15 +1348,22 @@ B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back } /*don
 +!doActions[perform]: { ~B plans(Plans)} <- printstate;
 
 +!doActions[perform]: { B plans(Plans),
- B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])
-                        }
+ B current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
+                       ~B stopping_plan }
 					<-
-					print("RE DEBUG   achieve plan   ","Performing action ",FirstAction),
+					print("RE DEBUG   achieve plan   ","Performing action because no stopping plan belief",FirstAction),
 					+!doAction(FirstAction)[perform],
 					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
 					+current_plan(Goal,Source,Index,ActionsTail),
 					print("RE DEBUG   achieve plan   ","Added new action set ",ActionsTail),
 					+!printCurrentPlanBelief[perform]
+					;
+
++!doActions[perform]: { B plans(Plans),
+ B current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
+                       B stopping_plan }
+					<-
+					do_nothing
 					;
 
 +!printCurrentPlanBelief[perform]: {B plans(Plans),
@@ -1355,13 +1373,6 @@ B current_plan(Goal,Source,Index,Actions)}
 {B plans(Plans),~B current_plan(Goal,Source,Index,Actions)}
 <- print("RE DEBUG   print current belief   ","I believe that there is no current plan"),+!printMH[perform];
 
-//+!doActions[perform]: {B current_plan(Goal,Source,Index,[FirstAction|ActionsTail])}
-//					<-
-//					print("RE DEBUG   do actions   ","Performing action ",FirstAction),
-//					+!doAction(FirstAction)[perform],
-//					-current_plan(Goal,Source,Index,[FirstAction|ActionsTail]),
-//					+current_plan(Goal,Source,Index,ActionsTail)
-//					;
 
 +!doAction(move_to(Loc))[perform]: {~B going(L1), ~B moving, ~B at(Loc), B location(Loc)
                                     } <-
@@ -1379,7 +1390,7 @@ B current_plan(Goal,Source,Index,Actions)}
 +!update_move_history[perform] : {~B at(Loc), B move_history(MH)}
 							<- print("RE DEBUG   update move history   ","isnt anywhere");
 
-+!update_move_history[perform] : {B at(Loc), B move_history(MH), B plan_index(Pindex)}
++!update_move_history[perform] : {B at(Loc), B move_history(MH), B plan_index(Pindex), B moved}
     <-
     +.lock,
     +!printMH("RE DEBUG   update move history   Before update ")[perform],
@@ -1388,9 +1399,26 @@ B current_plan(Goal,Source,Index,Actions)}
     sum(Pindex,1,PindexOne),
     -plan_index(Pindex),
     +plan_index(PindexOne),
+    remove_shared(moved),
     +!printMH("RE DEBUG update move history   After update ")[perform],
     -.lock;
 
++!update_move_history[perform] : {B at(Loc), B move_history([]), B plan_index(Pindex), ~B moved}
+    <-
+    +.lock,
+    +!printMH("RE DEBUG   update move history   Before update ")[perform],
+    -move_history([]),
+    +move_history([move_to(Loc) | MH]),
+    sum(Pindex,1,PindexOne),
+    -plan_index(Pindex),
+    +plan_index(PindexOne),
+//    remove_shared(moved),
+    +!printMH("RE DEBUG update move history   After update ")[perform],
+    -.lock;
+
++!update_move_history[perform] : {B at(Loc), B move_history(MH), B plan_index(Pindex), ~B moved}
+    <-
+do_nothing;
 
 +!get_violations(Percept)[perform]: {
         B plans(Plans),
@@ -1578,8 +1606,12 @@ print("RE DEBUG   got check violations ",Loc,"  initial setup not complete so do
 +check_maintain_violations(near(Loc),radiation(RadLevel)): {B plans(Plans),
     B initial_setup_complete, B specification("Maintain",MSpecs)} <-
 					remove_shared(check_maintain_violations(near(Loc),radiation(RadLevel))),
+					+stopping_plan,
+                    					print("RE DEBUG   ","check maintain violations near ",Loc," radiation level ", RadLevel, " added stopping plan belief "),
+                    					printstate,
 
 					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
+
 					+!revise_annotations_action_property(near(Loc))[perform]
 					 ;
 +check_maintain_violations(near(Loc),radiation(RadLevel)): {B plans(Plans),
