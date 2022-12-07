@@ -23,6 +23,7 @@ public abstract class RosbridgeEASSEnvironment extends DefaultEASSEnvironment {
     // name of the environment
     private String name= "Default EASS Rosbridge Environment";
 
+    private String logname ="rosbridge.eass.mas";
     // default port
     protected int portnumber = 9090;
 
@@ -60,17 +61,18 @@ public abstract class RosbridgeEASSEnvironment extends DefaultEASSEnvironment {
     @Override
     public void init_after_adding_agents(){
         if(connectedtorosbridge){
-            AJPFLogger.info("rosbridge.eass.mas","Waiting for connection");
+            AJPFLogger.info(logname,"Waiting for connection");
             try {
                 rosbridge.connect(create_uri(), true);
+                AJPFLogger.info(logname,"ROSBridge setting up publishers and subscribers");
                 set_rosbridge_subscribers();
                 set_rosbridge_publishers();
             } catch ( Exception e)
             {
-                AJPFLogger.severe("rosbridge.eass.mas",e.getMessage());
+                AJPFLogger.severe(logname,e.getMessage());
                 System.exit(0);
             }
-            AJPFLogger.info("rosbridge.eass.mas","Connected to ROSBridge");
+            AJPFLogger.info(logname,"Connected to ROSBridge");
         }
     }
 
