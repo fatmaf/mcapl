@@ -306,9 +306,9 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
 
 //        System.out.println("Radiation: " + radiation);
         String radlevel = "low";
-        if (radiation >= 130) {
+        if (radiation >= 200) { //250
            radlevel = "high";
-        } else if (radiation >= 95) {
+        } else if (radiation >= 120) { //120
            radlevel = "almosthigh";
         }
         Predicate updated_rad_level = radiation_percepts.get(radlevel);

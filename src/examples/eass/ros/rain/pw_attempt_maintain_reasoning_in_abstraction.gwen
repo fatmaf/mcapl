@@ -203,12 +203,14 @@ location_count(0)
 //// got a radiation percept
 +radiation(RadLevel): {True} <-
     print("Radiation level ",RadLevel), +!do_check_maintain_violations[perform],+!printNearBeliefs[perform];
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform], assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
 +!do_check_maintain_violations[perform]: {B radiation(low)} <- do_nothing;
 +!printNearBeliefs[perform]:{B near(Loc)} <- print("Near ",Loc);
 +!printNearBeliefs[perform]:{~B near(Loc)} <- print("Not near anything");
 
+
++!stop_moving[perform]: {B moving, ~B cancelled_goal, ~B moving_back} <- assert_shared(cancelled_goal_not_done), +!cancel_goal[perform],print("AE DEBUG   send cancel goal   ","Sent goal cancel request");
 +!cancel_goal[perform] : {True} <- cancel_goal;
 
 // so here is where all the reasoning is done
@@ -888,7 +890,7 @@ B locations_of_interest(Locs),
                                               -plans(Plans),
                                   +plans(AnnotatedPlans),
 
-                                                                    +initial_setup_complete,
+                                                                    assert_shared(initial_setup_complete),
                                                                                                        					+!get_specifications_status[perform],
  -.lock
 ;
@@ -1039,7 +1041,7 @@ B plans(Plans),
                             }
                             <-
                             +.lock,
-                            +moving_back,
+                            assert_shared(moving_back),
                             +stop_plan,
                             print("RE DEBUG   stop plan   ","Dropping current plan ",Goal,Index),
                             -current_plan(Goal,Source,Index,Actions),
@@ -1052,7 +1054,7 @@ B plans(Plans),
 B current_plan(Goal,Source,Index,Actions),
                     ~B moving, ~B moving_back, ~B cancelled_goal}
                     <-
-                    +moving_back,
+                    assert_shared(moving_back),
                     +stop_plan,
                     print("RE DEBUG   stop plan   ","Stopping plan not moving"),
                     -!do_all_plan_steps(Goal,Source,Index)[achieve],
@@ -1061,7 +1063,7 @@ B current_plan(Goal,Source,Index,Actions),
 +!stop_plan[achieve]: {B plans(Plans),
 ~B current_plan(Goal,Source,Index,Actions),
                         ~B moving_back, ~B moving, ~B cancelled_goal}
-                        <- +moving_back, +stop_plan, print("RE DEBUG   stop plan   ","Stopping plan with no current plan"), +!move_back[achieve];
+                        <- assert_shared(moving_back), +stop_plan, print("RE DEBUG   stop plan   ","Stopping plan with no current plan"), +!move_back[achieve];
 
 +!stop_plan[achieve]: {B plans(Plans),
  B current_plan(Goal,Source,Index,Actions) ,
@@ -1069,7 +1071,7 @@ B current_plan(Goal,Source,Index,Actions),
                         ~B moving_back,
                         ~B cancelled_goal}<-
                         +!send_cancel_goal[perform];
-+!stop_moving[perform]: {~B cancelled_goal, B moving, ~B moving_back} <-+!send_cancel_goal[perform];
+
 +!stop_plan[achieve]: {B plans(Plans),
 B current_plan(Goal,Source,Index,Actions), ~B moving, ~B moving_back,B cancelled_goal} <- do_nothing;
 +!stop_plan[achieve]: {B plans(Plans),
@@ -1105,10 +1107,10 @@ B move_back_list([]), ~B moving
 					  -move_back_list([]),
 					  +move_back,
 					  -cancelled_goal,
-					  -moving_back,
+					  remove_shared(moving_back),
 					  -violation_detected,
 					  print("removing stopping plan belief"),
-					  -stopping_plan,
+					  remove_shared(stopping_plan),
 					  +!get_new_plan[perform],
 					  -.lock
 					  ;
@@ -1178,9 +1180,7 @@ B current_plan(Goal,Source,Index,[]),
 									<-
 									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
 									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
-									print("RE DEBUG   achieve plan   ","believe stopping plan"),
-
-									printstate;
+									print("RE DEBUG   achieve plan   ","believe stopping plan");
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {B plans(Plans),
  ~B current_plan(Goal,Source,Index,Actions)
@@ -1285,7 +1285,7 @@ do_nothing;
         B violation_detected
         } <-
        do_nothing;
-+!get_violations(Percept)[perform]: {True} <- print("in get violations"), printstate;
++!get_violations(Percept)[perform]: {True} <- print("in get violations");
  +!stop_current_plan(Percept,[])[perform]: {B plans(Plans)} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan");
 
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]:
@@ -1367,7 +1367,7 @@ do_nothing;
                           ;
 
 
-+!revise_annotations_action_property(near(OtherLoc))[perform]: {True} <- print("no applicable plan for revise annotations action property near ",OtherLoc), printstate;
++!revise_annotations_action_property(near(OtherLoc))[perform]: {True} <- print("no applicable plan for revise annotations action property near ",OtherLoc);
 +!revise_annotations_action(Percept)[perform]: {B plans(Plans),
                       B current_plan(Goal,Source,Index,Actions),
                       B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots),
@@ -1436,11 +1436,6 @@ print("RE DEBUG   got check violations ",Loc,"  initial setup not complete so do
 +check_maintain_violations(near(Loc),radiation(RadLevel)): {B plans(Plans),
     B initial_setup_complete, B specification("Maintain",MSpecs)} <-
 					remove_shared(check_maintain_violations(near(Loc),radiation(RadLevel))),
-					print("adding stopping plan belief"),
-					+stopping_plan,
-                    print("RE DEBUG   ","check maintain violations near ",Loc," radiation level ", RadLevel, " added stopping plan belief "),
-                    +!stop_moving[perform],
-                    print("RE DEBUG   ","check maintain violations near ",Loc," radiation level ", RadLevel, " stop moving executed "),
 					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
 					+!revise_annotations_action_property(near(Loc))[perform]
 					 ;
