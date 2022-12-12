@@ -37,6 +37,12 @@ location_coordinate(tankzone,-2.198,-4.939,0.000)
 // TODO: make sure this is assert_shared somewhere!!!
 location_count(0)
 
+:Reasoning Rules:
+
+ismember(H, [H | T]);
+ismember(H, [X | T]) :-
+	ismember(H,T);
+
 :Initial Goals:
 
 
@@ -167,48 +173,30 @@ location_count(0)
 -on(Loc): {True} <- remove_shared(at(Loc)), print("AE DEBUG at   ","removing at ",Loc);
 
 // near a location and we have low radiation
-+near(Loc): {B radiation(low), B near_percepts_list([])} <-
++near(Loc): {B radiation(low),B initial_setup_complete, B locations_of_interest(Locs), B ismember(Loc,Locs)} <-
     print("AE DEBUG   near loc   ","Near ", Loc," with low radiation"),
-    assert_shared(check_violations(Loc)),
-    -near_percepts_list([]),
-    +near_percepts_list([check_violations(Loc)]);
-
-+near(Loc): {B radiation(low), B near_percepts_list(Nearbeliefs)} <-
-    print("AE DEBUG   near loc   ","Near ", Loc," with low radiation adding to percepts list"),
-    assert_shared(check_violations(Loc)),
-    -near_percepts_list(Nearbeliefs),
-    +near_percepts_list([check_violations(Loc) | Nearbeliefs]);
-
--check_violations(Loc): {B near_percepts_list([])} <- do_nothing;
--check_violations(Loc): {B near_percepts_list([Hbelief|Tbeliefs])} <-
-    -near_percepts_list([Hbelief|Tbeliefs]), +near_percepts_list(Tbeliefs);
+    +!suspend_plan_movement(Loc)[perform];
 
 
 // near a location and the radiation is not low and we believe we've got some maintain specs
-+near(Loc): {~B radiation(low),B radiation(RadVal),B near_percepts_list([])} <-
-    print("AE DEBUG   near loc    ","Near ", Loc," with ",RadVal," radiation "),
-    assert_shared(check_maintain_violations(near(Loc),radiation(RadVal))),
-    -near_percepts_list([]),
-    +near_percepts_list([check_maintain_violations(near(Loc),radiation(RadVal))]);
-
-+near(Loc): {~B radiation(low),B radiation(RadVal),B near_percepts_list(Nearbeliefs)} <-
-    assert_shared(check_maintain_violations(near(Loc),radiation(RadVal))),
-    -near_percepts_list(Nearbeliefs),
-    +near_percepts_list([check_maintain_violations(near(Loc),radiation(RadVal)) | Nearbeliefs]);
-
--check_maintain_violations(near(Loc),radiation(RadVal)): {B near_percepts_list([])} <- do_nothing;
--check_maintain_violations(near(Loc),radiation(RadVal)): {B near_percepts_list([Hbelief|Tbeliefs])} <-
-  -near_percepts_list([Hbelief|Tbeliefs]), +near_percepts_list(Tbeliefs);
++near(Loc): {~B radiation(low),B initial_setup_complete, B radiation(RadVal)} <-
+    +!suspend_plan_movement(Loc,RadVal)[perform];
 
 //// got a radiation percept
 +radiation(RadLevel): {True} <-
     print("Radiation level ",RadLevel), +!do_check_maintain_violations[perform],+!printNearBeliefs[perform];
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform], assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
+
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  +!suspend_plan_movement(Loc,RadVal)[perform];
+
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  +!suspend_plan_movement(Loc,RadVal)[perform];
+
 +!do_check_maintain_violations[perform]: {B radiation(low)} <- do_nothing;
 +!printNearBeliefs[perform]:{B near(Loc)} <- print("Near ",Loc);
 +!printNearBeliefs[perform]:{~B near(Loc)} <- print("Not near anything");
 
++!suspend_plan_movement(Loc,RadVal)[perform]: {True} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
+
++!suspend_plan_movement(Loc)[perform]: {True} <-  print("adding stopping plan belief for loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_violations(Loc));
 
 +!stop_moving[perform]: {B moving, ~B cancelled_goal, ~B moving_back} <- assert_shared(cancelled_goal_not_done), +!cancel_goal[perform],print("AE DEBUG   send cancel goal   ","Sent goal cancel request");
 +!cancel_goal[perform] : {True} <- cancel_goal;
@@ -253,14 +241,15 @@ plan_index(0)
 plans([
 	plan(visit(tankzone),at(door), 1, [move_to(foyer), move_to(tankzone)]),
 	plan(visit(tank2pipe),at(tankzone), 1, [move_to(tank2face),move_to(tank2),move_to(tank2pipe)]),
-	plan(visit(tank2pipe),at(tankzone), 2, [move_to(tank1face), move_to(corridor), move_to(tank1pipe), move_to(tankset),move_to(tank2pipe)]),
+	plan(visit(tank2pipe),at(tankzone), 2, [move_to(tank1face), move_to(tank1pipe), move_to(tankset),move_to(tank2pipe)]),
+	plan(visit(tank2pipe),at(tankzone), 3, [move_to(foyer), move_to(freezone), move_to(stairs),move_to(farwall),move_to(pipes),move_to(tank1pipe),move_to(tankset),move_to(tank2pipe)]),
 	plan(visit(tankset),at(tank2pipe),1,[move_to(tankset)]),
 	plan(visit(pipes),at(tankset),1,[move_to(pipes)]),
 	plan(visit(pipes),at(tank2pipe),1,[move_to(pipes)])
 	])
 //specs
 
-original_specification("Required",[visit(tankzone),visit(tank2pipe),visit(tankset),visit(pipes),maintain(radiation(low))])
+original_specification("Required",[visit(tankzone),visit(tank2pipe),visit(tankset),visit(pipes),avoid(corridor),maintain(radiation(low))])
 original_specification("Preferred",[before(tankzone,tank2pipe),before(tankzone,tankset),before(tankzone,pipes),before(tank2pipe,pipes),before(tankset,pipes),before(tank2pipe,tankset)])
 
 
@@ -1286,7 +1275,7 @@ do_nothing;
         } <-
        do_nothing;
 +!get_violations(Percept)[perform]: {True} <- print("in get violations");
- +!stop_current_plan(Percept,[])[perform]: {B plans(Plans)} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan");
+ +!stop_current_plan(Percept,[])[perform]: {B plans(Plans), B stopping_plan} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan"), remove_shared(stopping_plan) ;
 
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]:
                             {B plans(Plans)} <-
