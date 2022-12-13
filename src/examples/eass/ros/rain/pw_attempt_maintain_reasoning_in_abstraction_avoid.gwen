@@ -37,12 +37,6 @@ location_coordinate(tankzone,-2.198,-4.939,0.000)
 // TODO: make sure this is assert_shared somewhere!!!
 location_count(0)
 
-:Reasoning Rules:
-
-ismember(H, [H | T]);
-ismember(H, [X | T]) :-
-	ismember(H,T);
-
 :Initial Goals:
 
 
@@ -125,7 +119,7 @@ ismember(H, [X | T]) :-
 
 +!move_cleanup[perform]: {~B moving, ~B going(Loc) }
     <- print("AE DEBUG   move clean up   ","move clean up called for no reason");
-+!move_cleanup[perform]: {True} <-print("AE DEBUG   move clean up   ","strange beliefs "), printstate,done;
+
 // what to do when a location has been visited
 +!visitedLoc(Loc)[perform] : {B location_count(C), B visited(Loc,Cy)}
 //this is different from what I have but I think its fine, well is it? no its not so i'm changing it
@@ -173,30 +167,48 @@ ismember(H, [X | T]) :-
 -on(Loc): {True} <- remove_shared(at(Loc)), print("AE DEBUG at   ","removing at ",Loc);
 
 // near a location and we have low radiation
-+near(Loc): {B radiation(low),B initial_setup_complete, B locations_of_interest(Locs), B ismember(Loc,Locs)} <-
++near(Loc): {B radiation(low), B near_percepts_list([])} <-
     print("AE DEBUG   near loc   ","Near ", Loc," with low radiation"),
-    +!suspend_plan_movement(Loc)[perform];
+    assert_shared(check_violations(Loc)),
+    -near_percepts_list([]),
+    +near_percepts_list([check_violations(Loc)]);
+
++near(Loc): {B radiation(low), B near_percepts_list(Nearbeliefs)} <-
+    print("AE DEBUG   near loc   ","Near ", Loc," with low radiation adding to percepts list"),
+    assert_shared(check_violations(Loc)),
+    -near_percepts_list(Nearbeliefs),
+    +near_percepts_list([check_violations(Loc) | Nearbeliefs]);
+
+-check_violations(Loc): {B near_percepts_list([])} <- do_nothing;
+-check_violations(Loc): {B near_percepts_list([Hbelief|Tbeliefs])} <-
+    -near_percepts_list([Hbelief|Tbeliefs]), +near_percepts_list(Tbeliefs);
 
 
 // near a location and the radiation is not low and we believe we've got some maintain specs
-+near(Loc): {~B radiation(low),B initial_setup_complete, B radiation(RadVal)} <-
-    +!suspend_plan_movement(Loc,RadVal)[perform];
++near(Loc): {~B radiation(low),B radiation(RadVal),B near_percepts_list([])} <-
+    print("AE DEBUG   near loc    ","Near ", Loc," with ",RadVal," radiation "),
+    assert_shared(check_maintain_violations(near(Loc),radiation(RadVal))),
+    -near_percepts_list([]),
+    +near_percepts_list([check_maintain_violations(near(Loc),radiation(RadVal))]);
+
++near(Loc): {~B radiation(low),B radiation(RadVal),B near_percepts_list(Nearbeliefs)} <-
+    assert_shared(check_maintain_violations(near(Loc),radiation(RadVal))),
+    -near_percepts_list(Nearbeliefs),
+    +near_percepts_list([check_maintain_violations(near(Loc),radiation(RadVal)) | Nearbeliefs]);
+
+-check_maintain_violations(near(Loc),radiation(RadVal)): {B near_percepts_list([])} <- do_nothing;
+-check_maintain_violations(near(Loc),radiation(RadVal)): {B near_percepts_list([Hbelief|Tbeliefs])} <-
+  -near_percepts_list([Hbelief|Tbeliefs]), +near_percepts_list(Tbeliefs);
 
 //// got a radiation percept
 +radiation(RadLevel): {True} <-
     print("Radiation level ",RadLevel), +!do_check_maintain_violations[perform],+!printNearBeliefs[perform];
-
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  +!suspend_plan_movement(Loc,RadVal)[perform];
-
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  +!suspend_plan_movement(Loc,RadVal)[perform];
-
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform], assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
 +!do_check_maintain_violations[perform]: {B radiation(low)} <- do_nothing;
 +!printNearBeliefs[perform]:{B near(Loc)} <- print("Near ",Loc);
 +!printNearBeliefs[perform]:{~B near(Loc)} <- print("Not near anything");
 
-+!suspend_plan_movement(Loc,RadVal)[perform]: {True} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
-
-+!suspend_plan_movement(Loc)[perform]: {True} <-  print("adding stopping plan belief for loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_violations(Loc));
 
 +!stop_moving[perform]: {B moving, ~B cancelled_goal, ~B moving_back} <- assert_shared(cancelled_goal_not_done), +!cancel_goal[perform],print("AE DEBUG   send cancel goal   ","Sent goal cancel request");
 +!cancel_goal[perform] : {True} <- cancel_goal;
@@ -367,17 +379,23 @@ strip_locations_from_specs([H | T],LocsN):-
 //we have the list of locations we care about
 //if we have a move_to/move to something in our list
 //we add the visit annotation
-get_visit_annotations(Actions,[],[]);
-get_visit_annotations(Actions,[Hloc | Tloc], [visit(Hloc,Index) | OtherAnnots]):-
-    getindex(move_to(Hloc),Actions,1,Index),
-    get_visit_annotations(Actions,Tloc,OtherAnnots);
-get_visit_annotations(Actions,[Hloc | Tloc],  OtherAnnots):-
-    get_visit_annotations(Actions,Tloc,OtherAnnots);
-get_visit_annotations(at(InitLoc),Actions,Locs,[visit(InitLoc,0) | OtherAnnots]):-
+
+get_visit_annotations(Index,[],Locs,[]);
+get_visit_annotations(Index,[move_to(HLoc)|Tactions],Locs,[visit(HLoc,Index) | OtherAnnots]):-
+    ismember(HLoc,Locs),
+    next_number(Index,NewIndex),
+    get_visit_annotations(NewIndex,Tactions,Locs,OtherAnnots);
+get_visit_annotations(Index,[move_to(HLoc)|Tactions],Locs, OtherAnnots):-
+    next_number(Index,NewIndex),
+    get_visit_annotations(NewIndex,Tactions,Locs,OtherAnnots);
+
+get_visit_annotationsInit(at(InitLoc),Actions,Locs,[visit(InitLoc,0) | OtherAnnots]):-
     ismember(InitLoc,Locs),
-    get_visit_annotations(Actions,Locs,OtherAnnots);
-get_visit_annotations(at(InitLoc),Actions,Locs, OtherAnnots):-
-    get_visit_annotations(Actions,Locs,OtherAnnots);
+    get_visit_annotations(1,Actions,Locs,OtherAnnots);
+
+get_visit_annotationsInit(at(InitLoc),Actions,Locs,OtherAnnots):-
+    get_visit_annotations(1,Actions,Locs,OtherAnnots);
+
 
 update_visit_annotations_for_loc(Loc,Actions,OldVisits,[visit(Loc,Index) | OldVisits]):-
     getindex(move_to(Loc),Actions,1,Index);
@@ -524,7 +542,7 @@ update_befores_from_beliefs(CurrentlyUnknownBefores,CurrentlySatB,CurrentViolB,U
     append(ViolatedBeforesN,CurrentViolB,ViolatedBefores);
 
 get_annotations(UnknownBefores,at(Loc),Actions,Start,Locs,VisitAnnots,BeforesAnnots):-
-    get_visit_annotations(at(Loc),Actions,Locs,VisitAnnots),
+    get_visit_annotationsInit(at(Loc),Actions,Locs,VisitAnnots),
     generate_befores_for_plan(UnknownBefores,VisitAnnots,BeforesAnnots);
 
 
@@ -789,7 +807,7 @@ B specification("Required","not goals",NotGoalsList),
                                        B strip_locations_from_specs_wrapper(CSpecs,Locs)
                                        }
                                        <-
-                                       assert_shared(locations_of_interest(Locs)),
+                                       +locations_of_interest(Locs),
                                        +specification("Combined",CSpecs)
                                        ;
 +!check_for_maintains[perform]: {B plans(Plans),
@@ -821,7 +839,7 @@ B specification("Combined",Oldspecs),
                                 +specification("Combined",CSpecs);
 +!update_locs_of_interest(Loc)[perform]: {B plans(Plans),
 B locations_of_interest(OldLocs),
-                                B add_to_list(Loc,OldLocs,NewLocs)} <- remove_shared(locations_of_interest(OldLocs)), assert_shared(locations_of_interest(NewLocs));
+                                B add_to_list(Loc,OldLocs,NewLocs)} <- -locations_of_interest(OldLocs), +locations_of_interest(NewLocs);
 
 +!do_all_spec_beliefs[perform] : {B plans(Plans)} <- +.lock,
 //                                            +!print_specification_beliefs[perform],
@@ -1275,7 +1293,7 @@ do_nothing;
         } <-
        do_nothing;
 +!get_violations(Percept)[perform]: {True} <- print("in get violations");
- +!stop_current_plan(Percept,[])[perform]: {B plans(Plans), B stopping_plan} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan"), remove_shared(stopping_plan) ;
+ +!stop_current_plan(Percept,[])[perform]: {B plans(Plans)} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan");
 
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]:
                             {B plans(Plans)} <-
