@@ -37,6 +37,15 @@ location_coordinate(tankzone,-2.198,-4.939,0.000)
 // TODO: make sure this is assert_shared somewhere!!!
 location_count(0)
 
+:Reasoning Rules:
+
+ismember(H, [H | T]);
+ismember(H, [X | T]) :-
+	ismember(H,T);
+
+can_violate_avoid(Loc,Specs):-
+    ismember(avoid(Loc),Specs);
+
 :Initial Goals:
 
 
@@ -169,12 +178,14 @@ location_count(0)
 // near a location and we have low radiation
 +near(Loc): {B radiation(low), B near_percepts_list([])} <-
     print("AE DEBUG   near loc   ","Near ", Loc," with low radiation"),
+    +!detect_avoid(Loc)[perform],
     assert_shared(check_violations(Loc)),
     -near_percepts_list([]),
     +near_percepts_list([check_violations(Loc)]);
 
 +near(Loc): {B radiation(low), B near_percepts_list(Nearbeliefs)} <-
     print("AE DEBUG   near loc   ","Near ", Loc," with low radiation adding to percepts list"),
+    +!detect_avoid(Loc)[perform],
     assert_shared(check_violations(Loc)),
     -near_percepts_list(Nearbeliefs),
     +near_percepts_list([check_violations(Loc) | Nearbeliefs]);
@@ -212,6 +223,12 @@ location_count(0)
 
 +!stop_moving[perform]: {B moving, ~B cancelled_goal, ~B moving_back} <- assert_shared(cancelled_goal_not_done), +!cancel_goal[perform],print("AE DEBUG   send cancel goal   ","Sent goal cancel request");
 +!cancel_goal[perform] : {True} <- cancel_goal;
+
++!check_avoid_violation(Loc,Uspecs)[perform]: {B can_violate_avoid(Loc,Uspecs)} <- print("AE DEBUG   check avoid violation   can violate avoid ",Loc," specs ",Uspecs);
++!check_avoid_violation(Loc,Uspecs)[perform]: {~B can_violate_avoid(Loc,Uspecs)} <- print("AE DEBUG   check avoid violation   NO violation ",Loc," specs ",Uspecs);
+
++!detect_avoid(Loc)[perform]: {B specification("Unknown","avoids",Uspecs)} <- print("AE DEBUG   detect avoid   loc ",Loc," unknown specs",Uspecs), +!check_avoid_violation(Loc,Uspecs)[perform];
++!detect_avoid(Loc)[perform]: {~B specification("Unknown","avoids",Uspecs) } <- print("AE DEBUG   detect avoid   loc ",Loc," no unknown specs belief");
 
 // so here is where all the reasoning is done
 // so this is going to be longer
@@ -261,7 +278,7 @@ plans([
 	])
 //specs
 
-original_specification("Required",[visit(tankzone),visit(tank2pipe),visit(tankset),visit(pipes),avoid(corridor),maintain(radiation(low))])
+original_specification("Required",[visit(tankzone),visit(tank2pipe),visit(tankset),visit(pipes),avoid(tank1),maintain(radiation(low))])
 original_specification("Preferred",[before(tankzone,tank2pipe),before(tankzone,tankset),before(tankzone,pipes),before(tank2pipe,pipes),before(tankset,pipes),before(tank2pipe,tankset)])
 
 
@@ -741,6 +758,13 @@ speclist_has_maintain([H | T], Rest):-
     speclist_has_maintain(T,Rest);
 
 
+filter_avoid([],[]);
+filter_avoid([avoid(Sloc) | T], [avoid(Sloc) | Rest]):-
+    filter_avoid(T,Rest);
+filter_avoid([H | T], Rest):-
+    filter_avoid(T,Rest);
+
+
 :Initial Goals:
 
 
@@ -967,24 +991,33 @@ B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_
                             B specification("Combined",Specs),
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                             ,B specification("Unknown",PrevUSpecs)
+                            ,B filter_avoid(USpecs,ASpecs)
+                            ,B specification("Unknown","avoids",PrevASpecs)
                             } <-
-                            -specification("Unknown",PrevUSpecs),
-                            +specification("Unknown",USpecs),
+                            remove_shared(specification("Unknown",PrevUSpecs)),
+                            assert_shared(specification("Unknown",USpecs)),
+                            remove_shared(specification("Unknown","avoids",PrevASpecs)),
+                            assert_shared(specification("Unknown","avoids",ASpecs)),
                             print("RE DEBUG   get spec status   ","Unknown specs",USpecs)
                             ,print("RE DEBUG   get spec status   ","Satisfied specs",SSpecs)
                             ,print("RE DEBUG   get spec status   ","Violated specs",VSpecs)
+                            ,print("RE DEBUG   get spec status   ","Unknown avoid specs",ASpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
 +!get_specifications_status[perform]: {B plans(Plans),
 B specification("Combined",Specs),
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
+                            ,B filter_avoid(USpecs,ASpecs)
                             ,~B specification("Unknown",PrevUSpecs)
+                            ,~B specification("Unknown","avoids",PrevASpecs)
                             } <-
 
-                            +specification("Unknown",USpecs),
+                            assert_shared(specification("Unknown",USpecs)),
+                            assert_shared(specification("Unknown","avoids",ASpecs)),
                             print("RE DEBUG   get spec status   ","Unknown specs",USpecs)
                             ,print("RE DEBUG   get spec status   ","Satisfied specs",SSpecs)
                             ,print("RE DEBUG   get spec status   ","Violated specs",VSpecs)
+                             ,print("RE DEBUG   get spec status   ","Unknown avoid specs",ASpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
 +!get_specifications_status[perform]: {~B plans(Plans)} <- print("RE DEBUG  get spec status   ","no plans");
