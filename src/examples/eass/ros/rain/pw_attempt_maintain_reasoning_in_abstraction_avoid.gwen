@@ -214,17 +214,30 @@ can_violate_avoid(Loc,Specs):-
 //// got a radiation percept
 +radiation(RadLevel): {True} <-
     print("Radiation level ",RadLevel), +!do_check_maintain_violations[perform],+!printNearBeliefs[perform];
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform], assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  print("adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc)} <-  print("AE DEBUG   adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform], assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
+
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc)} <-  print("AE DEBUG   adding stopping plan belief for rad level ",RadVal," loc ",Loc), assert_shared(stopping_plan), +!stop_moving[perform],assert_shared(check_maintain_violations(near(Loc),radiation(RadVal)));
+
 +!do_check_maintain_violations[perform]: {B radiation(low)} <- do_nothing;
-+!printNearBeliefs[perform]:{B near(Loc)} <- print("Near ",Loc);
-+!printNearBeliefs[perform]:{~B near(Loc)} <- print("Not near anything");
++!printNearBeliefs[perform]:{B near(Loc)} <- print("AE DEBUG   Near ",Loc);
++!printNearBeliefs[perform]:{~B near(Loc)} <- print("AE DEBUG   Not near anything");
 
 
-+!stop_moving[perform]: {B moving, ~B cancelled_goal, ~B moving_back} <- assert_shared(cancelled_goal_not_done), +!cancel_goal[perform],print("AE DEBUG   send cancel goal   ","Sent goal cancel request");
++!stop_moving[perform]: {B moving, ~B cancelled_goal, ~B moving_back} <- assert_shared(cancellled_goal), assert_shared(cancelled_goal_not_done), +!cancel_goal[perform],print("AE DEBUG   send cancel goal   ","Sent goal cancel request");
 +!cancel_goal[perform] : {True} <- cancel_goal;
 
-+!check_avoid_violation(Loc,Uspecs)[perform]: {B can_violate_avoid(Loc,Uspecs)} <- print("AE DEBUG   check avoid violation   can violate avoid ",Loc," specs ",Uspecs);
++!check_avoid_violation(Loc,Uspecs)[perform]: {B can_violate_avoid(Loc,Uspecs), B stopping_plan} <- print("AE DEBUG   check avoid violation   can violate avoid ",Loc," specs ",Uspecs)
+                //stop the plan
+                ,print("AE DEBUG   Can not add stopping plan belief it already exists")
+
+//                ,assert_shared(stopping_plan)
+                ,+!stop_moving[perform], assert_shared(check_violations(Loc));
++!check_avoid_violation(Loc,Uspecs)[perform]: {B can_violate_avoid(Loc,Uspecs), ~B stopping_plan} <- print("AE DEBUG   check avoid violation   can violate avoid ",Loc," specs ",Uspecs)
+                //stop the plan
+                ,print("AE DEBUG   adding stopping plan belief")
+
+                ,assert_shared(stopping_plan)
+                ,+!stop_moving[perform], assert_shared(check_violations(Loc));
 +!check_avoid_violation(Loc,Uspecs)[perform]: {~B can_violate_avoid(Loc,Uspecs)} <- print("AE DEBUG   check avoid violation   NO violation ",Loc," specs ",Uspecs);
 
 +!detect_avoid(Loc)[perform]: {B specification("Unknown","avoids",Uspecs)} <- print("AE DEBUG   detect avoid   loc ",Loc," unknown specs",Uspecs), +!check_avoid_violation(Loc,Uspecs)[perform];
@@ -267,19 +280,29 @@ move_history([])
 plan_index(0)
 
 //plans
+
 plans([
-	plan(visit(tankzone),at(door), 1, [move_to(foyer), move_to(tankzone)]),
-	plan(visit(tank2pipe),at(tankzone), 1, [move_to(tank2face),move_to(tank2),move_to(tank2pipe)]),
-	plan(visit(tank2pipe),at(tankzone), 2, [move_to(tank1face), move_to(tank1pipe), move_to(tankset),move_to(tank2pipe)]),
-	plan(visit(tank2pipe),at(tankzone), 3, [move_to(foyer), move_to(freezone), move_to(stairs),move_to(farwall),move_to(pipes),move_to(tank1pipe),move_to(tankset),move_to(tank2pipe)]),
-	plan(visit(tankset),at(tank2pipe),1,[move_to(tankset)]),
-	plan(visit(pipes),at(tankset),1,[move_to(pipes)]),
-	plan(visit(pipes),at(tank2pipe),1,[move_to(pipes)])
-	])
+    plan(visit(pipes),at(door),1,[move_to(foyer),move_to(tank1face),move_to(tank1pipe),move_to(pipes)]),
+    plan(visit(pipes),at(door),2,[move_to(foyer),move_to(roomwall),move_to(pipes)]),
+    plan(visit(pipes),at(door),3,[move_to(foyer),move_to(freezone),move_to(stairs),move_to(farwall),move_to(pipes)])
+     ])
+
+//specs
+original_specification("Required",[visit(pipes)])
+original_specification("Preferred",[avoid(tank1),avoid(corridor)])
+//plans([
+//	plan(visit(tankzone),at(door), 1, [move_to(foyer), move_to(tankzone)]),
+//	plan(visit(tank2pipe),at(tankzone), 1, [move_to(tank2face),move_to(tank2),move_to(tank2pipe)]),
+//	plan(visit(tank2pipe),at(tankzone), 2, [move_to(tank1face), move_to(tank1pipe), move_to(tankset),move_to(tank2pipe)]),
+//	plan(visit(tank2pipe),at(tankzone), 3, [move_to(foyer), move_to(freezone), move_to(stairs),move_to(farwall),move_to(pipes),move_to(tank1pipe),move_to(tankset),move_to(tank2pipe)]),
+//	plan(visit(tankset),at(tank2pipe),1,[move_to(tankset)]),
+//	plan(visit(pipes),at(tankset),1,[move_to(pipes)]),
+//	plan(visit(pipes),at(tank2pipe),1,[move_to(pipes)])
+//	])
 //specs
 
-original_specification("Required",[visit(tankzone),visit(tank2pipe),visit(tankset),visit(pipes),avoid(tank1),maintain(radiation(low))])
-original_specification("Preferred",[before(tankzone,tank2pipe),before(tankzone,tankset),before(tankzone,pipes),before(tank2pipe,pipes),before(tankset,pipes),before(tank2pipe,tankset)])
+//original_specification("Required",[visit(tankzone),visit(tank2pipe),visit(tankset),visit(pipes),avoid(tank1),maintain(radiation(low))])
+//original_specification("Preferred",[before(tankzone,tank2pipe),before(tankzone,tankset),before(tankzone,pipes),before(tank2pipe,pipes),before(tankset,pipes),before(tank2pipe,tankset)])
 
 
 //original_specification("Required",[visit(l4_0), visit(l3_4)])
@@ -873,8 +896,7 @@ B locations_of_interest(OldLocs),
                                              +!print_specification_beliefs("do all spec beliefs   ")[perform],
 //                                                    +!print_specification_beliefs[perform],
                                             +!add_not_goals_spec[perform],
-                                                                                        +!check_for_maintains[perform],
-
+                                            +!check_for_maintains[perform],
                                             +!print_specification_beliefs("do all spec beliefs   ")[perform],
                                              +!generate_befores[perform],
                                              -.lock;
@@ -918,13 +940,11 @@ B locations_of_interest(Locs),
                                   print("RE DEBUG   ","add plan annotations   ","Old plans",Plans),
                                   print("RE DEBUG   ","add plan annotations   ","Annotated plans",AnnotatedPlans),
                                    +.lock,
-                                              -plans(Plans),
+                                  -plans(Plans),
                                   +plans(AnnotatedPlans),
-
-                                                                    assert_shared(initial_setup_complete),
-                                                                                                       					+!get_specifications_status[perform],
- -.lock
-;
+                                  assert_shared(initial_setup_complete),
+                                  +!get_specifications_status[perform],
+                                  -.lock;
 +!add_plan_annotations_action[perform]: {B plans(Plans),
 B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_before_annotations_action[perform], -.lock
                                    					,+!get_specifications_status[perform];
@@ -1094,12 +1114,14 @@ B plans(Plans),
 B current_plan(Goal,Source,Index,Actions),
                     ~B moving, ~B moving_back, ~B cancelled_goal}
                     <-
+                    +.lock,
                     assert_shared(moving_back),
                     +stop_plan,
                     print("RE DEBUG   stop plan   ","Stopping plan not moving"),
                     -!do_all_plan_steps(Goal,Source,Index)[achieve],
                     -current_plan(Goal,Source,Index,Actions),
-                    +!move_back[achieve];
+                    +!move_back[achieve],
+                                                                    -.lock;
 +!stop_plan[achieve]: {B plans(Plans),
 ~B current_plan(Goal,Source,Index,Actions),
                         ~B moving_back, ~B moving, ~B cancelled_goal}
@@ -1116,13 +1138,12 @@ B current_plan(Goal,Source,Index,Actions),
 B current_plan(Goal,Source,Index,Actions), ~B moving, ~B moving_back,B cancelled_goal} <- do_nothing;
 +!stop_plan[achieve]: {B plans(Plans),
 B moving_back, B moving} <- do_nothing;
-+!stop_plan[achieve]:{B plans(Plans)} <-  do_nothing;
 
-+!stop_plan[achieve]:{~B plans(Plans)}<- do_nothing;
++!stop_plan[achieve]: {True} <- print("RE DEBUG stop plan","Nothing is happening"), printstate, wait(1000);
 
 +!send_cancel_goal[perform]: {B plans(Plans),
 B moving} <- +.lock, perf(cancel_goal),
-+cancelled_goal, assert_shared(cancelled_goal_not_done), print("RE DEBUG   send cancel goal   ","Sent goal cancel request"), -.lock;
+assert_shared(cancelled_goal), assert_shared(cancelled_goal_not_done), print("RE DEBUG   send cancel goal   ","Sent goal cancel request"), -.lock;
 
 // send a stop moving signal
 // once youve stopped moving
@@ -1138,23 +1159,40 @@ B move_history([FAct|TActs]),
 
 
 
-+!move_back[achieve]:{B plans(Plans),
-B move_back_list([]), ~B moving
++!move_back[achieve]:{
+B move_back_list([]), ~B moving,
+                      B stopping_plan
 					  }
 					  <-
 					  +.lock,
 					  print("RE DEBUG   move back   ","Moved back"),
 					  -move_back_list([]),
 					  +move_back,
-					  -cancelled_goal,
+					  remove_shared(cancelled_goal),
 					  remove_shared(moving_back),
 					  -violation_detected,
-					  print("removing stopping plan belief"),
+					  print("RE DEBUG   move back   removing stopping plan belief"),
 					  remove_shared(stopping_plan),
 					  +!get_new_plan[perform],
 					  -.lock
 					  ;
++!move_back[achieve]:{
+B move_back_list([]), ~B moving,
+                      ~B stopping_plan
+					  }
+					  <-
+					  +.lock,
+					  print("RE DEBUG   move back   ","Moved back"),
+					  -move_back_list([]),
+					  +move_back,
+					  remove_shared(cancelled_goal),
+					  remove_shared(moving_back),
+					  -violation_detected,
+					  print("RE DEBUG   move back   NO stopping plan belief"),
 
+					  +!get_new_plan[perform],
+					  -.lock
+					  ;
 +!move_back[achieve]:{B plans(Plans),
 B move_back_list([FAct|TActs]), ~B moving
 					  }
@@ -1325,7 +1363,7 @@ do_nothing;
         B violation_detected
         } <-
        do_nothing;
-+!get_violations(Percept)[perform]: {True} <- print("in get violations");
++!get_violations(Percept)[perform]: {True} <- print("RE DEBUG   in get violations for some unknown reason");
  +!stop_current_plan(Percept,[])[perform]: {B plans(Plans)} <- print("RE DEBUG  stop current plan   ","No violations possible so not stopping the plan");
 
  +!stop_current_plan(Percept,CouldViolateSpecs)[perform]:
