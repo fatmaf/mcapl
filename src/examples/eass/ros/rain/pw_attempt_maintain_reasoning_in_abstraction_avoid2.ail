@@ -1,4 +1,4 @@
-mas.file = /src/examples/eass/ros/rain/pw_attempt_maintain_reasoning_in_abstraction_avoid.gwen
+mas.file = /src/examples/eass/ros/rain/pw_attempt_maintain_reasoning_in_abstraction_avoid2.gwen
 mas.builder = eass.EASSMASBuilder
 
 env = eass.ros.rain.AtNearEnv
