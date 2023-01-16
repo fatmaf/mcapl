@@ -94,10 +94,12 @@ can_violate(Loc,[H | T]):-
 
 // moving
 +!move(Loc) [perform]: {B location_coordinate(Loc,X,Y,Z)} <-
-    print("AE DEBUG   moving to ",Loc," o",X," ",Y," ",Z,"o "),
+    +.lock,
     assert_shared(going(Loc)),
     assert_shared(moving),
-    move(X,Y,Z);
+    move(X,Y,Z),
+        print("AE DEBUG   moving to ",Loc," o",X," ",Y," ",Z,"o "),
+    -.lock;
 
 // the results of ros movebase
 +movebase_result(Id,3) : { B moving, B going(Loc), B at(Loc)} <-
@@ -258,13 +260,13 @@ can_violate(Loc,[H | T]):-
         B specification("Can violate",Specs)
         ,B can_violate(Percept,Specs)
         } <-
-        print("RE DEBUG   get violations   ",Percept," could violate ",CouldViolateSpecs, " from ", Specs),
+        print("AE DEBUG   get violations   ",Percept," could violate ",CouldViolateSpecs, " from ", Specs),
         +!stop_current_plan(Percept)[perform];
 
 +!get_violations(Percept)[perform]: {        ~B violation_detected,
                                              B specification("Can violate",Specs)
                                              ,~B can_violate(Percept,Specs)}
-                                             <- print("RE DEBUG   in get violations for because no specs violated");
+                                             <- print("AE DEBUG   in get violations for because no specs violated");
 
 +!get_violations(Percept)[perform]: {
         B violation_detected
@@ -272,7 +274,7 @@ can_violate(Loc,[H | T]):-
         print("RE DEBUG   get violations but violation detected already"),
        do_nothing;
 
-+!get_violations(Percept)[perform]:{True} <- print("RE DEBUG   in get violations no suitable belief"), printstate;
++!get_violations(Percept)[perform]:{True} <- print("AE DEBUG   in get violations no suitable belief"), printstate;
 
 
  +!stop_current_plan(Percept)[perform]:
@@ -334,10 +336,7 @@ plan_index(0)
 plans([
     plan(visit(pipes),at(door),1,[move_to(foyer),move_to(tank1face),move_to(tank1pipe),move_to(pipes)]),
     plan(visit(pipes),at(door),2,[move_to(foyer),move_to(roomwall),move_to(pipes)]),
-    plan(visit(pipes),at(door),3,[move_to(foyer),move_to(freezone),move_to(stairs),move_to(farwall),move_to(pipes)]),
-    plan(visit(pipes),at(foyer),1,[move_to(tank1face),move_to(tank1pipe),move_to(pipes)]),
-        plan(visit(pipes),at(foyer),2,[move_to(roomwall),move_to(pipes)]),
-        plan(visit(pipes),at(foyer),3,[move_to(freezone),move_to(stairs),move_to(farwall),move_to(pipes)])
+    plan(visit(pipes),at(door),3,[move_to(foyer),move_to(freezone),move_to(stairs),move_to(farwall),move_to(pipes)])
      ])
 
 //specs
@@ -1188,21 +1187,21 @@ B move_back_list([]), ~B moving
 					  +move_back,
 					  remove_shared(cancelled_goal),
 					  remove_shared(moving_back),
-					  -violation_detected,
+					  remove_shared(violation_detected),
 					  print("RE DEBUG   move back   removing stopping plan belief"),
 					  +!remove_stopping_plan_belief[perform],
 					  +!get_new_plan[perform],
 					  -.lock
 					  ;
 
-+!move_back[achieve]:{B plans(Plans),
-B move_back_list([FAct|TActs]), ~B moving
++!move_back[achieve]:{ B move_back_list([FAct|TActs]), ~B moving
 					  }
-					  <-  print("RE DEBUG   move back   ","Doing moveback actions"),+!doMoveBackActions[perform];
-+!move_back[achieve]: {B plans(Plans),
-B moving} <- print("RE DEBUG   move back already moving"), do_nothing;
-+!doMoveBackActions[perform]: {B plans(Plans),
-B move_back_list([FAct|TActs]) }
+					  <-  print("RE DEBUG   move back   ","Doing moveback actions"),
+					  +!doMoveBackActions[perform];
+
++!move_back[achieve]: {B moving} <- print("RE DEBUG   move back already moving"), do_nothing;
+
++!doMoveBackActions[perform]: {~B moving, B move_back_list([FAct|TActs]) }
 					<-
 					print("RE DEBUG   move back   ","Moving back ",FAct),
 					+!doAction(FAct)[perform],
@@ -1256,18 +1255,20 @@ B current_plan(Goal,Source,Index,[]),
 									+!doActions[perform];
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
-                                B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back, B stopping_plan(Loc) } /*done*/
+                                B current_plan(Goal,Source,Index,PlanActions),
+                                 ~B moving, ~B moving_back, B stopping_plan(Loc) } /*done*/
 									<-
 									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
 									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
-									print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc);
+									print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc),
+									print("RE DEBUG   achieve plan   ","not moving back either hmm");
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
                                 B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back, B stopping_plan(Loc,RadVal) } /*done*/
 									<-
 									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
 									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
-									print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc," ",RadVal);
+print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc," ",Rad),                                          									print("RE DEBUG   achieve plan   ","not moving back either hmm");
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
  ~B current_plan(Goal,Source,Index,Actions)
@@ -1326,9 +1327,9 @@ B current_plan(Goal,Source,Index,Actions)}
 
 +!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("RE DEBUG   do action   ","already at",Loc);
 
-+!doAction(move_to(Loc))[perform]: {B moving} <- print("RE DEBUG    do action   ","moving already"),do_nothing;
++!doAction(move_to(Loc))[perform]: {B moving} <- print("RE DEBUG    do action   ","moving already"),printstate,do_nothing;
 
-+!doAction(move_to(Loc))[perform]: {B plans(Plans)} <- print("RE DEBUG   do action   ","have plans but something else is missing ");
+
 +!doAction(move_to(Loc))[perform]: {True} <- print("RE DEBUG   do action   ","hmmm");
 +!reset_move_history[perform]: {B move_history(MH), B plan_index(Pindex)} <- -move_history(MH),+move_history([]),-plan_index(Pindex),+plan_index(0),
 									+!update_move_history[perform];
@@ -1434,7 +1435,7 @@ do_nothing;
                       B current_plan(Goal,Source,Index,Actions),
                       B plan_exists(Goal,Source,Index,AllActions,Vannots,Bannots)
                       ,B plan_index(Pindex)
-                      ,B revise_annotations(Percept,Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
+                      ,B revise_annotations(near(Percept),Pindex,Vannots,Bannots,UpdatedVannots,UpdatedBannots)
                       }
                       <-
                       print("RE DEBUG   revise annotations   ","Revising annotations"),
@@ -1446,9 +1447,8 @@ do_nothing;
 
 
 
-
 +!update_plan_in_plans(Loc,Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
-                                    B plans(Plans),
+
                                     B replace_plan_annots_in_plans_revise_for_loc(Loc,Plans,Goal,Source,Index,Actions,UVannots,UBannots,NewPlans)
                                     }    <-
                                     +.lock,
@@ -1456,6 +1456,7 @@ do_nothing;
                                      -plans(Plans),
                                      print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                                      +plans(NewPlans),
+                                     printstate,
                                     +!stop_plan[achieve],
                                     -.lock;
 
@@ -1467,6 +1468,7 @@ do_nothing;
                           -plans(Plans),
                            print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                           +plans(NewPlans),
+                          printstate,
                           +!stop_plan[achieve],
                            -.lock;
 

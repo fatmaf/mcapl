@@ -20,6 +20,8 @@ import java.util.Scanner;
 
 public class RemoteInspectionEnv extends RosbridgeEASSEnvironment{
 
+
+    int previousLogLevel = 0;
     String logname = "eass.ros.rain.RemoteInspectionEnvironment";
 
     float radiation = 0;
@@ -128,6 +130,15 @@ public class RemoteInspectionEnv extends RosbridgeEASSEnvironment{
             NumberTerm ly = new NumberTermImpl(y);
             act.getTerm(0).unifies(lx, u);
             act.getTerm(1).unifies(ly, u);
+        }
+        else if(actionname.equals("debuglogfine"))
+        {
+            previousLogLevel = AJPFLogger.getLevel("ail.syntax.EvaluationAndRuleBaseIterator").intValue();
+            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator",AJPFLogger.FINE);
+        }
+        else if(actionname.equals("logoff"))
+        {
+            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator",previousLogLevel);
         }
 
         Unifier theta = super.executeAction(agName, act);

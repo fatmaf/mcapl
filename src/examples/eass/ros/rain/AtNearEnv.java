@@ -37,6 +37,7 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
 
     HashMap<String, Predicate> radiation_percepts = new HashMap<>();
     String[] radlevels = {"low", "almosthigh", "high"};
+     int previousLogLevel=0;
 
     void initialise_radiation_percepts()
     {
@@ -280,6 +281,16 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
             cancel_goal();
         } else if (actionname.equals("debug")) {
             System.out.println("Debugging stuff");
+        }
+
+        else if(actionname.equals("debuglogfine"))
+        {
+            previousLogLevel = AJPFLogger.getLevel("ail.syntax.EvaluationAndRuleBaseIterator").intValue();
+            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator",AJPFLogger.FINE);
+        }
+        else if(actionname.equals("logoff"))
+        {
+            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator",previousLogLevel);
         }
 
         Unifier theta = super.executeAction(agName, act);
