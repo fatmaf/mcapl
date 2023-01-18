@@ -321,15 +321,24 @@ plan_index(0)
 
 //plans
 
-plans([
-    plan(visit(pipes),at(door),1,[move_to(foyer),move_to(tank1face),move_to(tank1pipe),move_to(pipes)]),
-    plan(visit(pipes),at(door),2,[move_to(foyer),move_to(roomwall),move_to(pipes)]),
-    plan(visit(pipes),at(door),3,[move_to(foyer),move_to(freezone),move_to(stairs),move_to(farwall),move_to(pipes)])
-     ])
+plans( [
+	plan(visit(tankzone),at(door), 1, [move_to(entrance), move_to(tankzone)]/*, [visit(tankzone),avoid(tank2) ]*/),
+	plan(visit(tank2pipe), at(tankzone), 1, [move_to(tank2face),move_to(tank2pipe)]/*, [visit(tank2pipe),avoid(tank2) ]*/),
+	plan(visit(tank2pipe), at(tankzone), 2, [move_to(tank1face), move_to(corridor), move_to(tankset),move_to(tank2pipe)]/*,
+[visit(tank2pipe),avoid(tank2) ]*/),
+	plan(visit(tankset), at(tank2pipe),1,[move_to(tankset)]/*,[visit(tankset),avoid(tank2)]*/),
+	plan(visit(pipes), at(tank2pipe), 1, [move_to(pipes)]),
+	plan(visit(pipes),at(tankset),1,[move_to(pipes)]/*, [visit(pipes),avoid(tank2)]*/)
+	])
 
-//specs
-original_specification("Required",[visit(pipes)])
-original_specification("Preferred",[avoid(tank1),avoid(corridor)])
+
+
+//specifications
+//specification("Required",[visit(tank1right),visit(pipes)])
+//specification("Preferred",[before(tank1right,pipes),avoid(tank2top)])
+original_specification("Required",[visit(tankzone),visit(pipes),visit(tank2pipe),visit(tankset)])
+original_specification("Preferred",[avoid(tank2),before(tankzone,tank2pipe),before(tankzone,tankset),before(tankzone,pipes),before(tank2pipe,pipes),before(tankset,pipes),before(tank2pipe,tankset)])
+
 
 
 // plan length for bookkeeping
@@ -1222,6 +1231,7 @@ B current_plan(Goal,Source,Index,[]),
 					 +!update_move_history[perform],
 					print("RE DEBUG   achieve plan   ","Achieved Plan for ",Goal),
 					+!printCurrentPlanBelief[perform],
+					printstate,
 					+!get_new_plan[achieve];
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
