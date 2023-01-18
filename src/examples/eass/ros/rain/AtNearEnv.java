@@ -126,31 +126,32 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
         return null;
     }
     void doOn(Vector3 msg) {
-        // do nothing if gwendolen hasn't started
-        // needs to change maybe
+        synchronized (percepts) {
+            // do nothing if gwendolen hasn't started
+            // needs to change maybe
 
 
-        Predicate current_loc = getLoc(msg.x, msg.y);
+            Predicate current_loc = getLoc(msg.x, msg.y);
 
-        if (current_loc != null) {
-            if(current_loc!=currently_at) {
-                AJPFLogger.fine(logname, "Adding percept " + current_loc.toString());
-                addUniquePercept(atperceptname, current_loc);
-                currently_at = current_loc;
+            if (current_loc != null) {
+                if (current_loc != currently_at) {
+                    AJPFLogger.fine(logname, "Adding percept " + current_loc.toString());
+                    addUniquePercept(atperceptname, current_loc);
+                    currently_at = current_loc;
+                }
+
+            } else {
+                // we are currently somewhere
+                // and we are actually no where
+                if (currently_at != null) {
+                    AJPFLogger.fine(logname, "Removing percept " + currently_at.toString());
+                    removePercept(currently_at);
+                    currently_at = current_loc;
+                }
+
             }
 
-        } else {
-            // we are currently somewhere
-            // and we are actually no where
-           if(currently_at!= null) {
-               AJPFLogger.fine(logname, "Removing percept " + currently_at.toString());
-               removePercept(currently_at);
-               currently_at = current_loc;
-           }
-
         }
-
-
     }
 
     boolean nearLoc(double cx, double cy, String loc) {
@@ -183,52 +184,47 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
         return nearlocs;
     }
     void doNear(Vector3 msg) {
+synchronized (percepts) {
 
+    ArrayList<Predicate> nearlocs = this.getNearLocs(msg.x, msg.y);
+    if (this.currently_near == null) {
+        // just has all the currently near percept s
+        currently_near = new ArrayList<>();
 
-            ArrayList<Predicate> nearlocs = this.getNearLocs(msg.x, msg.y);
-            if (this.currently_near == null) {
-                // just has all the currently near percept s
-                currently_near = new ArrayList<>();
+    }
 
-            }
-
-            // this is so we dont get multiple "near" percepts
-            // which may be bad actually
-            // if the percept is not in our new near locs
-            // we can remove it
-            for (Predicate p : currently_near) {
-                if (!nearlocs.contains(p)) {
-                    removePercept( p);
-                    AJPFLogger.warning(logname, "Removing percept " + p.toString());
-                }
-            }
-            // we add all the percepts that are in our new near locs
-            // not adding the ones that are already there (as in currently near)
-            for (Predicate p : nearlocs) {
-                if (!currently_near.contains(p)) {
-                    addPercept( p);
-                    AJPFLogger.warning(logname, "Adding percept " + p.toString());
-                }
-            }
-            // then we can set our currently near to this new thing
-            currently_near.clear();
-            currently_near.addAll(nearlocs);
-
+    // this is so we dont get multiple "near" percepts
+    // which may be bad actually
+    // if the percept is not in our new near locs
+    // we can remove it
+    for (Predicate p : currently_near) {
+        if (!nearlocs.contains(p)) {
+            removePercept(p);
+            AJPFLogger.warning(logname, "Removing percept " + p.toString());
+        }
+    }
+    // we add all the percepts that are in our new near locs
+    // not adding the ones that are already there (as in currently near)
+    for (Predicate p : nearlocs) {
+        if (!currently_near.contains(p)) {
+            addPercept(p);
+            AJPFLogger.warning(logname, "Adding percept " + p.toString());
+        }
+    }
+    // then we can set our currently near to this new thing
+    currently_near.clear();
+    currently_near.addAll(nearlocs);
+}
     }
 
 
     public void recieve_radiation_result(JsonNode data, String stringRep) {
         MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
         Radiation msg = unpacker.unpackRosMessage(data);
-//        float old_rad = radiation;
         radiation = (radiation + msg.value) / 2;
         if (started_moving) {
             receive_inspect();
-//            String toprint = "";
-//            if (currently_at != null)
-//                toprint += currently_at.toString();
-//            toprint += "/" + near_predlist_toString() + "\n" + old_rad + "," + msg.value + " -> " + radiation;
-            //	System.out.println(toprint);
+
         }
     }
     String near_predlist_toString()
