@@ -1,6 +1,7 @@
 package eass.ros.rain;
 
 import ail.mas.scheduling.NActionScheduler;
+import ail.mas.scheduling.RoundRobinScheduler;
 import ail.semantics.AILAgent;
 import ail.syntax.*;
 import ail.util.AILexception;
@@ -53,6 +54,7 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
         super();
         initialise_radiation_percepts();
         super.scheduler_setup(this, new NActionScheduler(100));
+//        super.scheduler_setup(this,new RoundRobinScheduler());
         // because we want to know where we are
         addUniquePercept("started",new Literal("started"));
         AJPFLogger.info(logname,"Added started percept");

@@ -270,7 +270,7 @@ can_violate(Loc,[H | T]):-
                             ,print("AE DEBUG   adding stopping plan belief")
                             ,assert_shared(violation_detected)
                             ,assert_shared(stopping_plan(Percept))
-                            ,print("RE DEBUG   stop current plan   ","Stop plan");
+                            ,print("AE DEBUG   stop current plan   ","Stop plan");
 
 
  +!stop_current_plan(Percept)[perform]:
@@ -819,15 +819,15 @@ filter_avoid([H | T], Rest):-
                             +!print_not_goals("add helper beliefs   ")[perform];
 
 // INCREMENTS - because I cant add in gwendolen
-+!generate_inc_beliefs(Index)[perform] : {B plans(Plans), B max_plan_len(Index)} <- do_nothing;
-+!generate_inc_beliefs(Index)[perform] : {B plans(Plans), B max_plan_len(Len)} <-
++!generate_inc_beliefs(Index)[perform] : {  B max_plan_len(Index)} <- do_nothing;
++!generate_inc_beliefs(Index)[perform] : {  B max_plan_len(Len)} <-
                     sum(Index,1,Index1),
                     +next_number(Index,Index1),
                      +!generate_inc_beliefs(Index1)[perform];
 
 
-+!print_inc_belief(Index)[perform] : {B plans(Plans), B max_plan_len(Index)} <- do_nothing;
-+!print_inc_belief(Index)[perform]: {B plans(Plans),
++!print_inc_belief(Index)[perform] : {  B max_plan_len(Index)} <- do_nothing;
++!print_inc_belief(Index)[perform]: {
 B next_number(Index,Index1), ~B max_plan_len(Index)}
 <- print("RE DEBUG   ","Print next number   ","Next number"),
 print("RE DEBUG   ","Print next number   ",Index),print("RE DEBUG   ","Print next number   ",Index1),+!print_inc_belief(Index1)[perform];
@@ -912,22 +912,22 @@ B locations_of_interest(OldLocs),
                                             +!print_specification_beliefs("do all spec beliefs   ")[perform],
                                              +!generate_befores[perform],
                                              -.lock;
-+!print_specification_beliefs(CallingAction)[perform]: {B plans(Plans)} <- +!print_specification_belief(CallingAction,"Required")[perform],
++!print_specification_beliefs(CallingAction)[perform]: {True} <- +!print_specification_belief(CallingAction,"Required")[perform],
                                     +!print_specification_belief(CallingAction,"Preferred")[perform],
                                     +!print_specification_belief(CallingAction,"Combined")[perform],
                                     +!print_specification_belief(CallingAction,"Goals")[perform],
                                     +!print_specification_belief(CallingAction,"Maintain")[perform];
 
-+!print_not_goals(CallingAction)[perform]: {B plans(Plans),
++!print_not_goals(CallingAction)[perform]: {
 B specification("Required","not goals",Ng), B locations_of_interest(Locs)}
  <- print("RE DEBUG  ",CallingAction,"Print not goals   ","Req not goals",Ng), print("RE DEBUG  ",CallingAction,"Print not goals   ","Locs of interest",Locs);
 
-+!print_specification_belief(CallingAction,SName)[perform]: {B plans(Plans),
++!print_specification_belief(CallingAction,SName)[perform]: {
 B specification(SName,Spec)} <- print("RE DEBUG  ",CallingAction,"Print spec belief   ",SName," ",Spec);
-+!print_specification_belief(CallingAction,SName)[perform]: {B plans(Plans),
++!print_specification_belief(CallingAction,SName)[perform]: {
 ~B specification(SName,Spec)} <- print("RE DEBUG  ",CallingAction,"Print spec belief   ",SName," does not exist");
 // Generating befores
-+!generate_befores[perform]: {B plans(Plans),
++!generate_befores[perform]: {
 B locations_of_interest(Locs),
                               B generate_befores_from_beliefs(Locs,UnknownBefores,SatisfiedBefores,ViolatedBefores,AllPossibleBefores)  }
                               <- +specification("befores","unknown",UnknownBefores),
@@ -978,7 +978,10 @@ B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_
                             }         <-       print("RE DEBUG   ","Update visit annots for loc   "," Old plans",Plans),
                                        print("RE DEBUG   ","Update visit annots for loc   "," Loc ",Loc)
                                        , print("RE DEBUG   ","Update visit annots for loc   "," Updated plans",UpdatedPlans)
-;
+          , +.lock,
+            -plans(Plans),
+                                                                              +plans(UpdatedPlans),
+                                                                              -.lock;
 
 +!update_before_annotations_action[perform]: {
           B plans(Plans)
@@ -1011,7 +1014,7 @@ B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_
                                 +!find_valid_plans_action(AvailablePlans)[perform];
 +!get_available_plans[perform]: {~B plans(Plans)} <- print("RE DEBUG   "," no plans retrying") ;
 +!get_available_plans[perform]: {B plans(Plans)} <- print("RE DEBUG   "," something else is missing");
-+!print_specification_status[perform]: {B plans(Plans),
++!print_specification_status[perform]: {
                                     B specification("Combined",Specs),
                                     B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                                         }   <-
@@ -1019,7 +1022,7 @@ B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_
                                         print("RE DEBUG   print spec status   ","Satisfied specs",SSpecs),
                                         print("RE DEBUG   print spec status   ","Violated specs",VSpecs);
 
-+!get_specifications_status[perform]: {B plans(Plans),
++!get_specifications_status[perform]: {
                             B specification("Combined",Specs),
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                             ,B specification("Unknown",PrevUSpecs)
@@ -1036,7 +1039,7 @@ B initial_setup_complete} <- +.lock, +!update_before_beliefs[perform], +!update_
                             ,print("RE DEBUG   get spec status   ","Unknown avoid specs",ASpecs)
                             ,+!do_plans(USpecs)[perform]
                             ;
-+!get_specifications_status[perform]: {B plans(Plans),
++!get_specifications_status[perform]: {
 B specification("Combined",Specs),
                             B specs_unknown_satisfied_violated(Specs,USpecs,SSpecs,VSpecs)
                             ,B filter_avoid(USpecs,ASpecs)
@@ -1096,7 +1099,10 @@ B plans(Plans),
 
 
 +!get_new_plan[achieve]: {B plans(Plans), ~B updating_plans} <-     print("RE DEBUG  get new plan dropping violate belief"), +!drop_can_violate_belief[perform],+get_new_plan;
-+!get_new_plan[achieve]: {True} <-print("RE DEBUG   get new plan  fallback"),printstate, do_nothing;
+
+
++!get_new_plan[achieve]: {  B updating_plans} <-      print("RE DEBUG   get new plan  waiting for plans to be updated"), do_nothing;
++!get_new_plan[achieve]: {True} <- print("RE DEBUG   get new plan   something strange happened"), printstate, print("RE DEBUG   get new plan   something strange happened");
 // to stop a plan
 // you need to drop the achieve goal
 
@@ -1104,6 +1110,7 @@ B plans(Plans),
     ~B moving, ~B moving_back, B cancelled_goal, B plans(Plans) }
              <-
                             +.lock,
+                            print("RE DEBUG stop plan   "," in stop plan with current plan and cancelled goal"),
                             assert_shared(moving_back),
                             +stop_plan,
                             print("RE DEBUG   stop plan   ","Dropping current plan ",Goal,Index),
@@ -1258,7 +1265,7 @@ B current_plan(Goal,Source,Index,[]),
 									<-
 									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
 									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
-print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc," ",Rad), print("RE DEBUG   achieve plan   ","not moving back either hmm");
+print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc," ",RadVal), print("RE DEBUG   achieve plan   ","not moving back either hmm");
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
  ~B current_plan(Goal,Source,Index,Actions)
@@ -1399,6 +1406,7 @@ do_nothing;
                                      print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                                      +plans(NewPlans),
                                      -updating_plans,
+
                                     -.lock;
 
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
@@ -1410,7 +1418,11 @@ do_nothing;
                            print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                           +plans(NewPlans),
                           -updating_plans,
+
                            -.lock;
+
++!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {True} <- print("RE DEBUG  update plan in plans  something strange happening"),
+                        printstate, print("RE DEBUG  update plan in plans  something strange happening");
 
 +!initial_setup[perform]: {True} <-
                             +.lock,
