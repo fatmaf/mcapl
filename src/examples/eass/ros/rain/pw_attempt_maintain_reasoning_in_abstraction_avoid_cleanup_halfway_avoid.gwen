@@ -184,7 +184,6 @@ can_violate(Loc,[H | T]):-
     +.lock,
     remove_shared(going(Loc)),
     print("AE DEBUG   done move   ","done move"),
-    printstate,
     remove_shared(moving),
     -.lock;
 
@@ -262,7 +261,7 @@ can_violate(Loc,[H | T]):-
         print("RE DEBUG   get violations but violation detected already"),
        do_nothing;
 
-+!get_violations(Percept)[perform]:{True} <- print("AE DEBUG   in get violations no suitable belief"), printstate;
++!get_violations(Percept)[perform]:{True} <- print("AE DEBUG   in get violations no suitable belief");
 
 
  +!stop_current_plan(Percept)[perform]:
@@ -1096,8 +1095,8 @@ B plans(Plans),
             ,+!do_all_plan_steps(Goal,Source,Index)[achieve];
 
 
-+!get_new_plan[achieve]: {B plans(Plans), ~B updating_plans} <-      +!drop_can_violate_belief[perform],+get_new_plan;
-+!get_new_plan[achieve]: {B plans(Plans), B updating_plans} <-      print("RE DEBUG   get new plan  waiting for plans to be updated"), do_nothing;
++!get_new_plan[achieve]: {B plans(Plans), ~B updating_plans} <-     print("RE DEBUG  get new plan dropping violate belief"), +!drop_can_violate_belief[perform],+get_new_plan;
++!get_new_plan[achieve]: {True} <-print("RE DEBUG   get new plan  fallback"),printstate, do_nothing;
 // to stop a plan
 // you need to drop the achieve goal
 
@@ -1144,7 +1143,7 @@ B current_plan(Goal,Source,Index,Actions), ~B moving, ~B moving_back,B cancelled
 +!stop_plan[achieve]: {B plans(Plans),
 B moving_back, B moving} <- print("RE DEBUG   stop plan moving so doing nothing"), do_nothing;
 
-+!stop_plan[achieve]: {True} <- print("RE DEBUG stop plan","Nothing is happening"), printstate;
++!stop_plan[achieve]: {True} <- print("RE DEBUG stop plan","Nothing is happening");
 
 +!send_cancel_goal[perform]: {B plans(Plans),
 B moving} <- +.lock, perf(cancel_goal),
@@ -1231,7 +1230,7 @@ B current_plan(Goal,Source,Index,[]),
 					 +!update_move_history[perform],
 					print("RE DEBUG   achieve plan   ","Achieved Plan for ",Goal),
 					+!printCurrentPlanBelief[perform],
-					printstate,
+					print("RE DEBUG   achieve plan   ","next up get new plan"),
 					+!get_new_plan[achieve];
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
@@ -1245,14 +1244,14 @@ B current_plan(Goal,Source,Index,[]),
 									print("RE DEBUG   achieve plan   ","updated move history doing actions"),
 									+!doActions[perform];
 
-//+!do_all_plan_steps(Goal,Source,Index)[achieve]: {
-//                                B current_plan(Goal,Source,Index,PlanActions),
-//                                 ~B moving, ~B moving_back, B stopping_plan(Loc) } /*done*/
-//									<-
-//									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
-//									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
-//									print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc),
-//									print("RE DEBUG   achieve plan   ","not moving back either hmm");
++!do_all_plan_steps(Goal,Source,Index)[achieve]: {
+                                B current_plan(Goal,Source,Index,PlanActions),
+                                 ~B moving, ~B moving_back, B stopping_plan(Loc) } /*done*/
+									<-
+									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
+									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
+									print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc),
+									print("RE DEBUG   achieve plan   ","not moving back either hmm");
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
                                 B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back, B stopping_plan(Loc,RadVal) } /*done*/
@@ -1318,7 +1317,7 @@ B current_plan(Goal,Source,Index,Actions)}
 
 +!doAction(move_to(Loc))[perform]: {B at(Loc)} <- print("RE DEBUG   do action   ","already at",Loc);
 
-+!doAction(move_to(Loc))[perform]: {B moving} <- print("RE DEBUG    do action   ","moving already"),printstate,do_nothing;
++!doAction(move_to(Loc))[perform]: {B moving} <- print("RE DEBUG    do action   ","moving already"),do_nothing;
 
 
 +!doAction(move_to(Loc))[perform]: {True} <- print("RE DEBUG   do action   ","hmmm");
@@ -1400,7 +1399,6 @@ do_nothing;
                                      print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                                      +plans(NewPlans),
                                      -updating_plans,
-                                     printstate,
                                     -.lock;
 
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {
@@ -1412,7 +1410,6 @@ do_nothing;
                            print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                           +plans(NewPlans),
                           -updating_plans,
-                          printstate,
                            -.lock;
 
 +!initial_setup[perform]: {True} <-
@@ -1464,4 +1461,3 @@ B initial_setup_complete,B current_plan(Goal,Source,Index,Actions), B plan_index
 +!printPlan(Goal,Source,PlanIndex,PlanActions,PlanAnnotsV,PlanAnnotsB)[perform]: {True} <-
 	print("RE DEBUG   print plan   Plan ",Goal," ",Source," ",PlanIndex," ",PlanActions," ",PlanAnnotsV," ",PlanAnnotsB);
 
--moving:{True} <- printstate;
