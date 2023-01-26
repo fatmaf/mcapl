@@ -219,11 +219,11 @@ can_violate(Loc,[H | T]):-
 +radiation(RadLevel): {True} <-
     print("Radiation level ",RadLevel), +!do_check_maintain_violations[perform],+!printNearBeliefs[perform];
 
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc), ~B stopping_plan(Loc,RadVal)} <-  print("AE DEBUG   adding stopping plan belief for rad level ",RadVal," loc ",Loc), +!stop_moving[perform], assert_shared(stopping_plan(Loc,RadVal));
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc), B stopping_plan(Loc,RadVal)} <-  print("AE DEBUG   Already believe stopping plan ",RadVal," loc ",Loc);
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc), ~B stopping_plan(SomeLoc,AnyRadVal)} <-  print("AE DEBUG   adding stopping plan belief for rad level ",RadVal," loc ",Loc), +!stop_moving[perform], assert_shared(stopping_plan(Loc,RadVal));
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), B going(Loc), B stopping_plan(SomeLoc,AnyRadVal)} <-  print("AE DEBUG   Already believe stopping plan ",AnyRadVal," loc ",SomeLoc);
 
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc), ~B stopping_plan(Loc,RadVal)} <-  print("AE DEBUG   adding stopping plan belief for rad level ",RadVal," loc ",Loc), +!stop_moving[perform], assert_shared(stopping_plan(Loc,RadVal));
-+!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc), B stopping_plan(Loc,RadVal)} <-  print("AE DEBUG   Already believe stopping plan  ",RadVal," loc ",Loc);
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc), ~B stopping_plan(SomeOtherLoc,AnyRadVal)} <-  print("AE DEBUG   adding stopping plan belief for rad level ",RadVal," loc ",Loc), +!stop_moving[perform], assert_shared(stopping_plan(Loc,RadVal));
++!do_check_maintain_violations[perform]: {~B radiation(low),B radiation(RadVal), ~B going(SomeLoc), B near(Loc), B stopping_plan(SomeOtherLoc,AnyRadVal)} <-  print("AE DEBUG   Already believe stopping plan  ",AnyRadVal," loc ",SomeOtherLoc);
 
 +!do_check_maintain_violations[perform]: {B radiation(low)} <- do_nothing;
 
@@ -247,7 +247,7 @@ can_violate(Loc,[H | T]):-
         B specification("Can violate",Specs)
         ,B can_violate(Percept,Specs)
         } <-
-        print("AE DEBUG   get violations   ",Percept," could violate ",CouldViolateSpecs, " from ", Specs),
+        print("AE DEBUG   get violations   ",Percept," could violate specs from ", Specs),
         +!stop_current_plan(Percept)[perform];
 
 +!get_violations(Percept)[perform]: {        ~B violation_detected,
@@ -265,7 +265,7 @@ can_violate(Loc,[H | T]):-
 
 
  +!stop_current_plan(Percept)[perform]:
-                            {~B stopping_plan(Percept)} <-
+                            {~B stopping_plan(AnyPercept)} <-
                             +!stop_moving[perform]
                             ,print("AE DEBUG   adding stopping plan belief")
                             ,assert_shared(violation_detected)
@@ -274,8 +274,8 @@ can_violate(Loc,[H | T]):-
 
 
  +!stop_current_plan(Percept)[perform]:
-                            {B stopping_plan(Percept)} <-
-                            print("AE DEBUG   already have a stopping plan percept for this so this is just a redo");
+                            {B stopping_plan(AnyPercept)} <-
+                            print("AE DEBUG   already have a stopping plan percept ",AnyPercept," so not adding this one ",Percept);
 
 //******************************************************************************************************//
 //******************************************************************************************************//
@@ -321,7 +321,7 @@ plan_index(0)
 //plans
 
 plans( [
-	plan(visit(tankzone),at(door), 1, [move_to(entrance), move_to(tankzone)]/*, [visit(tankzone),avoid(tank2) ]*/),
+	plan(visit(tankzone),at(door), 1, [move_to(foyer), move_to(tankzone)]/*, [visit(tankzone),avoid(tank2) ]*/),
 	plan(visit(tank2pipe), at(tankzone), 1, [move_to(tank2face),move_to(tank2pipe)]/*, [visit(tank2pipe),avoid(tank2) ]*/),
 	plan(visit(tank2pipe), at(tankzone), 2, [move_to(tank1face), move_to(corridor), move_to(tankset),move_to(tank2pipe)]/*,
 [visit(tank2pipe),avoid(tank2) ]*/),
@@ -1079,7 +1079,7 @@ B plans(Plans),
 // that you care about i.e. the ones in your specifications
 // to a possible violations list
 +!choose_first_plan([])[perform]: {B plans(Plans)} <- print("RE DEBUG   choose first plan   ","No valid plans so we are all done"), +no_valid_plans, +!print_specification_status[perform];
-+at(Loc):{B no_valid_plans} <- print("RE DEBUG   ","at ",Loc,"  I seem to have moved so will attempt to find new plans"), -no_valid_plans, +!get_new_plan[achieve];
++at(Loc):{B no_valid_plans} <- print("RE DEBUG   ","at ",Loc,"  I seem to have moved so will attempt to find new plans"), -no_valid_plans, +!do_get_new_plan[perform];
 
 +!choose_first_plan(ValidPlans)[perform]: {B plans(Plans),
         B get_first_plan(ValidPlans,plan(Goal,Source,Index,Actions,Vannots,Bannots))
@@ -1105,6 +1105,8 @@ B plans(Plans),
 +!get_new_plan[achieve]: {True} <- print("RE DEBUG   get new plan   something strange happened"), printstate, print("RE DEBUG   get new plan   something strange happened");
 // to stop a plan
 // you need to drop the achieve goal
++!remove_move_back_belief[perform]: {B move_back} <- -move_back;
++!remove_move_back_belief[perform]: {True} <- do_nothing;
 
 +!stop_plan[achieve]:{B current_plan(Goal,Source,Index,Actions),
     ~B moving, ~B moving_back, B cancelled_goal, B plans(Plans) }
@@ -1117,6 +1119,9 @@ B plans(Plans),
                             -current_plan(Goal,Source,Index,Actions),
                             print("RE DEBUG   stop plan   ","Dropping achieve goal too"),
                             -!do_all_plan_steps(Goal,Source,Index)[achieve],
+                            printstate,
+                            +!remove_stop_plan_belief[perform],
+                            printstate,
                             +!move_back[achieve],
                             -.lock;
 
@@ -1125,6 +1130,7 @@ B current_plan(Goal,Source,Index,Actions),
  ~B moving, ~B moving_back, ~B cancelled_goal}
                     <-
                     +.lock,
+                    printstate,
                     assert_shared(moving_back),
                     +stop_plan,
                     print("RE DEBUG   stop plan   ","Stopping plan not moving"),
@@ -1135,7 +1141,7 @@ B current_plan(Goal,Source,Index,Actions),
 +!stop_plan[achieve]: {B plans(Plans),
     ~B current_plan(Goal,Source,Index,Actions),
     ~B moving_back, ~B moving, ~B cancelled_goal}
-    <- assert_shared(moving_back), +stop_plan, print("RE DEBUG   stop plan   ","Stopping plan with no current plan"), +!move_back[achieve];
+    <- printstate,assert_shared(moving_back), +stop_plan, print("RE DEBUG   stop plan   ","Stopping plan with no current plan"), +!move_back[achieve];
 
 +!stop_plan[achieve]: {B plans(Plans),
  B current_plan(Goal,Source,Index,Actions) ,
@@ -1172,6 +1178,14 @@ B move_history([FAct|TActs]),
 
 +!remove_stopping_plan_belief[perform]:{B stopping_plan(Loc,RadVal)} <- remove_shared(stopping_plan(Loc,RadVal));
 +!remove_stopping_plan_belief[perform]:{B stopping_plan(Loc)} <- remove_shared(stopping_plan(Loc));
++!remove_stop_plan_belief[perform]:{B stop_plan} <- -stop_plan;
++!remove_stop_plan_belief[perform]:{~B stop_plan} <- do_nothing;
++!remove_stop_plan_belief[perform]:{True} <- printstate;
+
++!remove_get_new_plan_belief[perform]:{B get_new_plan} <- -get_new_plan;
++!remove_get_new_plan_belief[perform]:{~B get_new_plan} <- do_nothing;
+
++!do_get_new_plan[perform]: {True} <- +.lock, +!remove_get_new_plan_belief[perform], +!get_new_plan[achieve], -.lock;
 
 +!move_back[achieve]:{
 B move_back_list([]), ~B moving
@@ -1229,6 +1243,7 @@ B current_plan(Goal,Source,Index,[]),
                                         ~B moving,
                                         ~B moving_back} /*done*/
 									<-
+									    +.lock,
 					print("RE DEBUG   achieve plan   ","Empty plan actions so all done ",Goal,Index),
 					+!printCurrentPlanBelief[perform],
 					+do_all_plan_steps(Goal,Source,Index),
@@ -1238,7 +1253,10 @@ B current_plan(Goal,Source,Index,[]),
 					print("RE DEBUG   achieve plan   ","Achieved Plan for ",Goal),
 					+!printCurrentPlanBelief[perform],
 					print("RE DEBUG   achieve plan   ","next up get new plan"),
-					+!get_new_plan[achieve];
+
+					+!remove_get_new_plan_belief[perform],
+					+!do_get_new_plan[perform],
+					-.lock;
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
                                 B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back, ~B stopping_plan(Loc), ~B stopping_plan(SLoc,RadVal)} /*done*/
@@ -1258,7 +1276,9 @@ B current_plan(Goal,Source,Index,[]),
 									print("RE DEBUG   achieve plan   ","Not moving and have a plan for ",Goal,Index),
 									print("RE DEBUG   achieve plan   ","In the middle of the plan"),
 									print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc),
-									print("RE DEBUG   achieve plan   ","not moving back either hmm");
+									print("RE DEBUG   achieve plan   ","not moving back either hmm"),
+									printstate,
+									wait(10000);
 
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
                                 B current_plan(Goal,Source,Index,PlanActions), ~B moving, ~B moving_back, B stopping_plan(Loc,RadVal) } /*done*/
@@ -1279,8 +1299,9 @@ print("RE DEBUG   achieve plan   ","believe stopping plan ",Loc," ",RadVal), pri
 									+current_plan(Goal,Source,Index,Actions),
 									+!reset_move_history[perform],
 					+!printCurrentPlanBelief[perform],
-									+!doActions[perform]
-									;
+									+!doActions[perform];
+
++!do_all_plan_steps(Goal,Source,Index)[achieve]: {True} <- printstate;
 
 +!doActions[perform]: { ~B plans(Plans)} <- print("RE DEBUG   doActions have no plans"), do_nothing;
 
@@ -1418,7 +1439,6 @@ do_nothing;
                            print("RE DEBUG   update plan in plans   ","Updating violated annots Adding new plans ",NewPlans),
                           +plans(NewPlans),
                           -updating_plans,
-
                            -.lock;
 
 +!update_plan_in_plans(Goal,Source,Index,Actions,UVannots,UBannots)[perform]: {True} <- print("RE DEBUG  update plan in plans  something strange happening"),
@@ -1442,21 +1462,33 @@ do_nothing;
 
 +stopping_plan(Loc,RadLevel): {
     B initial_setup_complete, B current_plan(Goal,Source,Index,Actions), B plan_index(Pindex) } <-
+
+    +.lock,
+    +!remove_stop_plan_belief[perform],
        +updating_plans,
         +!stop_plan[achieve],
+
 					+!update_specs_with_avoid_loc(maintain(radiation(low)),Loc)[perform],
 					+!revise_annotations_action_property(near(Loc),Goal,Source,Index,Pindex)[perform],
-					+!get_new_plan[achieve]
-					 ;
+					+!do_get_new_plan[perform],
+					-.lock;
 
 +stopping_plan(Percept):{
 B initial_setup_complete,B current_plan(Goal,Source,Index,Actions), B plan_index(Pindex)
     } <-
+    printstate,
+        +.lock,
+        printstate,
+        +!remove_stop_plan_belief[perform],
     +updating_plans,
+     printstate,
     +!stop_plan[achieve],
+     printstate,
+
     print("RE DEBUG   stop current plan   ","Need to update the specification for this plan"),
     +!revise_annotations_action(Percept,Goal,Source,Index,Pindex)[perform],
-    +!get_new_plan[achieve];
+     printstate,
+    +!do_get_new_plan[perform],      -.lock;
 
 +!begin_agent[perform]: {~B req_visits_have_plans} <- print("RE  Can not proceed as all required visits do not have plans");
 +!printBeliefPlans[perform] : {B plans(Plans)} <- print("RE DEBUG   print plan beliefs   ","Plans",Plans);

@@ -90,12 +90,13 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
     }
 
     public void receive_current_pose(JsonNode data, String stringRep) {
-        MessageUnpacker<Vector3> unpacker = new MessageUnpacker<Vector3>(Vector3.class);
-        Vector3 msg = unpacker.unpackRosMessage(data);
-        AJPFLogger.fine(logname,"Received pose info");
-        doOn(msg);
-        doNear(msg);
-
+        synchronized(percepts) {
+            MessageUnpacker<Vector3> unpacker = new MessageUnpacker<Vector3>(Vector3.class);
+            Vector3 msg = unpacker.unpackRosMessage(data);
+            AJPFLogger.fine(logname, "Received pose info");
+            doOn(msg);
+            doNear(msg);
+        }
     }
 
     boolean epsilonFromLoc(double cx, double cy, double lx, double ly, double epsilon) {
@@ -221,6 +222,7 @@ synchronized (percepts) {
 
 
     public void recieve_radiation_result(JsonNode data, String stringRep) {
+        synchronized (percepts){
         MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
         Radiation msg = unpacker.unpackRosMessage(data);
         radiation = (radiation + msg.value) / 2;
@@ -228,6 +230,7 @@ synchronized (percepts) {
             receive_inspect();
 
         }
+    }
     }
     String near_predlist_toString()
     {
@@ -241,13 +244,15 @@ synchronized (percepts) {
         return toret;
     }
     public void receive_movebase_result(JsonNode data, String stringRep) {
+    synchronized (percepts) {
         MessageUnpacker<MoveBaseActionResult> unpacker = new MessageUnpacker<MoveBaseActionResult>(MoveBaseActionResult.class);
         MoveBaseActionResult msg = unpacker.unpackRosMessage(data);
-        AJPFLogger.info(logname,"received movebase result");
+        AJPFLogger.info(logname, "received movebase result");
         Literal movebase_result = new Literal("movebase_result");
         movebase_result.addTerm(new NumberTermImpl(msg.header.seq));
         movebase_result.addTerm(new NumberTermImpl(msg.status.status));
         addUniquePercept("movebase_result", movebase_result);
+    }
     }
 
     public Unifier executeAction(String agName, Action act) throws AILexception {
