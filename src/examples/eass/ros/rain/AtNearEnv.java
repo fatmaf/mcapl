@@ -38,42 +38,41 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
 
     HashMap<String, Predicate> radiation_percepts = new HashMap<>();
     String[] radlevels = {"low", "almosthigh", "high"};
-     int previousLogLevel=0;
+    int previousLogLevel = 0;
 
-    void initialise_radiation_percepts()
-    {
+    void initialise_radiation_percepts() {
         String radiation_pred_name = "radiation";
-        for(String radlevel : radlevels)
-        {
+        for (String radlevel : radlevels) {
             Predicate rad_predicate = new Predicate(radiation_pred_name);
             rad_predicate.addTerm(new Predicate(radlevel));
-            radiation_percepts.put(radlevel,rad_predicate);
+            radiation_percepts.put(radlevel, rad_predicate);
         }
     }
+
     public AtNearEnv() {
         super();
         initialise_radiation_percepts();
         super.scheduler_setup(this, new NActionScheduler(100));
 //        super.scheduler_setup(this,new RoundRobinScheduler());
         // because we want to know where we are
-        addUniquePercept("started",new Literal("started"));
-        AJPFLogger.info(logname,"Added started percept");
+        addUniquePercept("started", new Literal("started"));
+        AJPFLogger.info(logname, "Added started percept");
 
 
     }
 
     public void set_rosbridge_publishers() {
-        AJPFLogger.info(logname,"setting up ROSBridge publishers");
+        AJPFLogger.info(logname, "setting up ROSBridge publishers");
         add_publisher("cmdvel", "/cmd_vel", "geometry_msgs/Twist");
         add_publisher("gwentomovebase", "/gwendolen_to_move_base", "geometry_msgs/Vector3");
         add_periodic_publisher("cmdvel", "/cmd_vel", "geometry_msgs/Twist");
         add_publisher("radiationStatus", "radiationStatus", "std_msgs/String");
-        AJPFLogger.info(logname,"done setting up ROSBridge publishers");
+        AJPFLogger.info(logname, "done setting up ROSBridge publishers");
     }
 
     public void set_rosbridge_subscribers() {
 
-        AJPFLogger.info(logname,"setting up ROSBridge subscribers");
+        AJPFLogger.info(logname, "setting up ROSBridge subscribers");
         try {
             RosBridge rosbridge = getRosbridge();
             rosbridge.subscribe(SubscriptionRequestMsg.generate("/move_base/result").setType("move_base_msgs/MoveBaseActionResult"), this::receive_movebase_result);
@@ -86,11 +85,11 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
             AJPFLogger.warning(logname, e.getMessage());
 
         }
-        AJPFLogger.info(logname,"done setting up ROSBridge subscribers");
+        AJPFLogger.info(logname, "done setting up ROSBridge subscribers");
     }
 
     public void receive_current_pose(JsonNode data, String stringRep) {
-        synchronized(percepts) {
+        synchronized (percepts) {
             MessageUnpacker<Vector3> unpacker = new MessageUnpacker<Vector3>(Vector3.class);
             Vector3 msg = unpacker.unpackRosMessage(data);
             AJPFLogger.fine(logname, "Received pose info");
@@ -100,18 +99,19 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
     }
 
     boolean epsilonFromLoc(double cx, double cy, double lx, double ly, double epsilon) {
-        double dist = getDistance(cx,cy,lx,ly);
+        double dist = getDistance(cx, cy, lx, ly);
         return (dist < epsilon);
 
 
     }
-    double getDistance(double cx, double cy, double lx, double ly)
-    {
+
+    double getDistance(double cx, double cy, double lx, double ly) {
         double dist = (cx - lx) * (cx - lx) + (cy - ly) * (cy - ly);
         dist = Math.sqrt(dist);
         dist = Math.abs(dist);
         return dist;
     }
+
     boolean atLoc(double cx, double cy, String loc) {
         return atLoc(cx, cy, location_coordinates.get(loc));
     }
@@ -119,6 +119,7 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
     boolean atLoc(double cx, double cy, AbstractMap.SimpleEntry<Double, Double> loc) {
         return epsilonFromLoc(cx, cy, loc.getKey(), loc.getValue(), at_epsilon_error);
     }
+
     Predicate getLoc(double cx, double cy) {
         // go over all the location coordinates
         for (String loc : this.location_coordinates.keySet()) {
@@ -128,6 +129,7 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
         }
         return null;
     }
+
     void doOn(Vector3 msg) {
         synchronized (percepts) {
             // do nothing if gwendolen hasn't started
@@ -166,7 +168,7 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
     }
 
     boolean distanceFromLocBetween(double cx, double cy, double lx, double ly, double upperBound, double lowerBound) {
-        double dist = getDistance(cx,cy,lx,ly);
+        double dist = getDistance(cx, cy, lx, ly);
         if (dist < upperBound) {
             if (dist >= lowerBound) {
                 return true;
@@ -176,6 +178,7 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
         return false;
 
     }
+
     ArrayList<Predicate> getNearLocs(double cx, double cy) {
         ArrayList<Predicate> nearlocs = new ArrayList<>();
         // not excluding at loc, check for this in the beliefs in gwendolen
@@ -186,73 +189,74 @@ public class AtNearEnv extends RosbridgeEASSEnvironment {
         }
         return nearlocs;
     }
+
     void doNear(Vector3 msg) {
-synchronized (percepts) {
+        synchronized (percepts) {
 
-    ArrayList<Predicate> nearlocs = this.getNearLocs(msg.x, msg.y);
-    if (this.currently_near == null) {
-        // just has all the currently near percept s
-        currently_near = new ArrayList<>();
+            ArrayList<Predicate> nearlocs = this.getNearLocs(msg.x, msg.y);
+            if (this.currently_near == null) {
+                // just has all the currently near percept s
+                currently_near = new ArrayList<>();
 
-    }
+            }
 
-    // this is so we dont get multiple "near" percepts
-    // which may be bad actually
-    // if the percept is not in our new near locs
-    // we can remove it
-    for (Predicate p : currently_near) {
-        if (!nearlocs.contains(p)) {
-            removePercept(p);
-            AJPFLogger.warning(logname, "Removing percept " + p.toString());
+            // this is so we dont get multiple "near" percepts
+            // which may be bad actually
+            // if the percept is not in our new near locs
+            // we can remove it
+            for (Predicate p : currently_near) {
+                if (!nearlocs.contains(p)) {
+                    removePercept(p);
+                    AJPFLogger.warning(logname, "Removing percept " + p.toString());
+                }
+            }
+            // we add all the percepts that are in our new near locs
+            // not adding the ones that are already there (as in currently near)
+            for (Predicate p : nearlocs) {
+                if (!currently_near.contains(p)) {
+                    addPercept(p);
+                    AJPFLogger.warning(logname, "Adding percept " + p.toString());
+                }
+            }
+            // then we can set our currently near to this new thing
+            currently_near.clear();
+            currently_near.addAll(nearlocs);
         }
-    }
-    // we add all the percepts that are in our new near locs
-    // not adding the ones that are already there (as in currently near)
-    for (Predicate p : nearlocs) {
-        if (!currently_near.contains(p)) {
-            addPercept(p);
-            AJPFLogger.warning(logname, "Adding percept " + p.toString());
-        }
-    }
-    // then we can set our currently near to this new thing
-    currently_near.clear();
-    currently_near.addAll(nearlocs);
-}
     }
 
 
     public void recieve_radiation_result(JsonNode data, String stringRep) {
-        synchronized (percepts){
-        MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
-        Radiation msg = unpacker.unpackRosMessage(data);
-        radiation = (radiation + msg.value) / 2;
-        if (started_moving) {
-            receive_inspect();
+        synchronized (percepts) {
+            MessageUnpacker<Radiation> unpacker = new MessageUnpacker<Radiation>(Radiation.class);
+            Radiation msg = unpacker.unpackRosMessage(data);
+            radiation = (radiation + msg.value) / 2;
+            if (started_moving) {
+                receive_inspect();
 
+            }
         }
     }
-    }
-    String near_predlist_toString()
-    {
+
+    String near_predlist_toString() {
         String toret = "";
-        if(currently_near!=null) {
-            for(Predicate p : currently_near)
-            {
-                toret +=p.toString()+",";
+        if (currently_near != null) {
+            for (Predicate p : currently_near) {
+                toret += p.toString() + ",";
             }
         }
         return toret;
     }
+
     public void receive_movebase_result(JsonNode data, String stringRep) {
-    synchronized (percepts) {
-        MessageUnpacker<MoveBaseActionResult> unpacker = new MessageUnpacker<MoveBaseActionResult>(MoveBaseActionResult.class);
-        MoveBaseActionResult msg = unpacker.unpackRosMessage(data);
-        AJPFLogger.info(logname, "received movebase result");
-        Literal movebase_result = new Literal("movebase_result");
-        movebase_result.addTerm(new NumberTermImpl(msg.header.seq));
-        movebase_result.addTerm(new NumberTermImpl(msg.status.status));
-        addUniquePercept("movebase_result", movebase_result);
-    }
+        synchronized (percepts) {
+            MessageUnpacker<MoveBaseActionResult> unpacker = new MessageUnpacker<MoveBaseActionResult>(MoveBaseActionResult.class);
+            MoveBaseActionResult msg = unpacker.unpackRosMessage(data);
+            AJPFLogger.info(logname, "received movebase result");
+            Literal movebase_result = new Literal("movebase_result");
+            movebase_result.addTerm(new NumberTermImpl(msg.header.seq));
+            movebase_result.addTerm(new NumberTermImpl(msg.status.status));
+            addUniquePercept("movebase_result", movebase_result);
+        }
     }
 
     public Unifier executeAction(String agName, Action act) throws AILexception {
@@ -280,20 +284,15 @@ synchronized (percepts) {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }  else if (actionname.equals("cancel_goal")) {
+        } else if (actionname.equals("cancel_goal")) {
             cancel_goal();
         } else if (actionname.equals("debug")) {
             System.out.println("Debugging stuff");
-        }
-
-        else if(actionname.equals("debuglogfine"))
-        {
+        } else if (actionname.equals("debuglogfine")) {
             previousLogLevel = AJPFLogger.getLevel("ail.syntax.EvaluationAndRuleBaseIterator").intValue();
-            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator",AJPFLogger.FINE);
-        }
-        else if(actionname.equals("logoff"))
-        {
-            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator",previousLogLevel);
+            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator", AJPFLogger.FINE);
+        } else if (actionname.equals("logoff")) {
+            AJPFLogger.setIntLevel("ail.syntax.EvaluationAndRuleBaseIterator", previousLogLevel);
         }
 
         Unifier theta = super.executeAction(agName, act);
@@ -307,13 +306,10 @@ synchronized (percepts) {
     }
 
 
-
-
     public void move(double lx, double ly, double lz) {
 
         publish("gwentomovebase", new Vector3(lx, ly, lz));
     }
-
 
 
     public void receive_inspect() {
@@ -321,13 +317,12 @@ synchronized (percepts) {
 //        System.out.println("Radiation: " + radiation);
         String radlevel = "low";
         if (radiation >= 200) { //250
-           radlevel = "high";
+            radlevel = "high";
         } else if (radiation >= 120) { //120
-           radlevel = "almosthigh";
+            radlevel = "almosthigh";
         }
         Predicate updated_rad_level = radiation_percepts.get(radlevel);
-        if(current_radiation_level == null || (current_radiation_level != updated_rad_level))
-        {
+        if (current_radiation_level == null || (current_radiation_level != updated_rad_level)) {
             addUniquePercept(radiationperceptname, updated_rad_level);
             publish("radiationStatus", new PrimitiveMsg<String>(radlevel));
         }
@@ -383,6 +378,7 @@ synchronized (percepts) {
     AbstractMap.SimpleEntry<Double, Double> create_pair(double x, double y) {
         return new AbstractMap.SimpleEntry<Double, Double>(x, y);
     }
+
     @Override
     public boolean done() {
         return false;

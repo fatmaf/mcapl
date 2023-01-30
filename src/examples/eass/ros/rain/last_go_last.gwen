@@ -73,7 +73,16 @@ can_violate(Loc,[H | T]):-
 /* just so we know things have started - relevant for the simulation, not sure about actual ROS */
 +started: {B location_count(C)} <-
     -location_count(C),
-    assert_shared(location_count(C)),
+//    assert_shared(location_count(C)),
+    assert_shared(visited(corridor,3)),
+    assert_shared(visited(tank1,4)),
+    assert_shared(visited(tank1face,2)),
+    assert_shared(visited(tank1pipe,5)),
+    assert_shared(visited(tank2face,1)),
+    assert_shared(visited(tank2pipe,7)),
+    assert_shared(visited(tankset,6)),
+    assert_shared(visited(tankzone,0)),
+    assert_shared(location_count(8)),
     assert_shared(start);
 
 // moving
@@ -1088,7 +1097,7 @@ B plans(Plans),
 // that you care about i.e. the ones in your specifications
 // to a possible violations list
 +!choose_first_plan([])[perform]: {B plans(Plans)} <- print("RE DEBUG   choose first plan   ","No valid plans so we are all done"), +no_valid_plans, +!print_specification_status[perform];
-+at(Loc):{B no_valid_plans} <- print("RE DEBUG   ","at ",Loc,"  I seem to have moved so will attempt to find new plans"), -no_valid_plans, +!do_get_new_plan(reason("No Valid Plans at ",Loc))[perform];
++at(Loc):{B no_valid_plans} <- print("RE DEBUG   ","at ",Loc,"  I seem to have moved so will attempt to find new plans"), -no_valid_plans, +!do_get_new_plan[perform];
 
 +!choose_first_plan(ValidPlans)[perform]: {B plans(Plans),
         B get_first_plan(ValidPlans,plan(Goal,Source,Index,Actions,Vannots,Bannots))
@@ -1111,12 +1120,11 @@ B plans(Plans),
             -.lock;
 
 
-//true when we get to do_plans
-+!get_new_plan(Reason)[achieve]: {B plans(Plans), ~B updating_plans} <-    +.lock, print("RE DEBUG  get new plan dropping violate belief"), +!drop_can_violate_belief[perform],+get_new_plan(Reason),-.lock;
++!get_new_plan[achieve]: {B plans(Plans), ~B updating_plans} <-    +.lock, print("RE DEBUG  get new plan dropping violate belief"), +!drop_can_violate_belief[perform],+get_new_plan,-.lock;
 
 
-+!get_new_plan(Reason)[achieve]: {  B updating_plans} <-      print("RE DEBUG   get new plan  waiting for plans to be updated"), do_nothing;
-+!get_new_plan(Reason)[achieve]: {True} <- print("RE DEBUG   ERROR get new plan   something strange happened");
++!get_new_plan[achieve]: {  B updating_plans} <-      print("RE DEBUG   get new plan  waiting for plans to be updated"), do_nothing;
++!get_new_plan[achieve]: {True} <- print("RE DEBUG   ERROR get new plan   something strange happened");
 // to stop a plan
 // you need to drop the achieve goal
 
@@ -1188,11 +1196,11 @@ assert_shared(cancelled_goal), assert_shared(cancelled_goal_not_done), print("RE
 +!remove_stop_plan_belief[perform]:{~B stop_plan} <- do_nothing;
 +!remove_stop_plan_belief[perform]:{True} <- print("RE DEBUG   ERROR remove stop plan belief no applicable plan");
 
-+!remove_get_new_plan_belief[perform]:{B get_new_plan(Reason)} <- +.lock, print("RE DEBUG   going to remove get new plan belief"), -get_new_plan(Reason), print("RE DEBUG   removed get new plan belief"), -.lock;
-+!remove_get_new_plan_belief[perform]:{~B get_new_plan(Reason)} <- print("RE DEBUG   dont believe get new plan so all okay");
++!remove_get_new_plan_belief[perform]:{B get_new_plan} <- +.lock, print("RE DEBUG   going to remove get new plan belief"), -get_new_plan, print("RE DEBUG   removed get new plan belief"), -.lock;
++!remove_get_new_plan_belief[perform]:{~B get_new_plan} <- print("RE DEBUG   dont believe get new plan so all okay");
 
-+!do_get_new_plan(Reason)[perform]: {True} <- +.lock, print("RE DEBUG   do get new plan   doing stuff"),
-            printstate,+!remove_get_new_plan_belief[perform], printstate,+!get_new_plan(Reason)[achieve], print("RE DEBUG   do get new plan   got new plan"), printstate, -.lock;
++!do_get_new_plan[perform]: {True} <- +.lock, print("RE DEBUG   do get new plan   doing stuff"),
+            printstate,+!remove_get_new_plan_belief[perform], printstate,+!get_new_plan[achieve], print("RE DEBUG   do get new plan   got new plan"), printstate, -.lock;
 
 
 +!move_back(Loc,RadLevel)[achieve]: {~B moving, B move_back_list([]), B final_move_back(Aloc), ~B at(Aloc)} <- +!doAction(move_to(Aloc))[perform];
@@ -1202,7 +1210,7 @@ assert_shared(cancelled_goal), assert_shared(cancelled_goal_not_done), print("RE
 					  }
 					  <-
 					  +.lock,
-					  print("RE DEBUG   move back   ","Moved back", Loc, RadLevel),
+					  print("RE DEBUG   move back   ","Moved back"),
 					  -move_back_list([]),
 					  -final_move_back(ALoc),
 					  -last_move_back_action(move_to(Sloc)),
@@ -1306,10 +1314,7 @@ B current_plan(Goal,Source,Index,[]),
 					print("RE DEBUG   achieve plan   ","Achieved Plan for ",Goal),
 					+!printCurrentPlanBelief[perform],
 					print("RE DEBUG   achieve plan   ","next up get new plan"),
-					printstate,
-					+!do_get_new_plan(reason("plan done ",Goal,Source,Index))[perform],
-					print("RE DEBUG   achieve plan   ","do get new plan returned"),
-					printstate,
+					+!do_get_new_plan[perform],
 					-.lock;
 +!do_all_plan_steps(Goal,Source,Index)[achieve]: {
 B current_plan(Goal,Source,Index,[]),
@@ -1554,7 +1559,7 @@ B initial_setup_complete,B current_plan(Goal,Source,Index,Actions), B plan_index
 +!printPlan(Goal,Source,PlanIndex,PlanActions,PlanAnnotsV,PlanAnnotsB)[perform]: {True} <-
 	print("RE DEBUG   print plan   Plan ",Goal," ",Source," ",PlanIndex," ",PlanActions," ",PlanAnnotsV," ",PlanAnnotsB);
 
-+move_back(Loc,RadLevel):{True} <-+.lock, +!remove_stopping_plan_belief[perform], +!do_get_new_plan(move_back(Loc,RadLevel))[perform], -.lock;
++move_back(Loc,RadLevel):{True} <-+.lock, +!remove_stopping_plan_belief[perform], +!do_get_new_plan[perform], -.lock;
 //-updating_plans:{True} <- +!do_get_new_plan[perform];
 //
 //+moving_back:{True} <- print("RE DEBUG   moving back belief added "), printstate;

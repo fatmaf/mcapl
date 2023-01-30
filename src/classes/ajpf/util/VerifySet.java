@@ -135,20 +135,37 @@ public class VerifySet<K extends Comparable<? super K>> implements SortedSet<K> 
 	 * @return
 	 */
 	private K insert(K t) {
+		K element_to_insert = t;
+		boolean insert_from_loop = false;
+		int index_to_add = -1;
+		K element_to_return = null;
+
 		for (int i = 0; i < sortedlist.size(); i++) {
 			K t1 = sortedlist.get(i);
 			int comparison = t.compareTo(t1);
 			if (comparison < 0) {
-				sortedlist.add(i, t);
-				return null;
+				insert_from_loop = true;
+				index_to_add = i;
+				break;
+
+//				sortedlist.add(i, t);
+//				return null;
 			} else if (comparison == 0) {
-				sortedlist.add(i, t);
-				return t1;
+				insert_from_loop = true;
+				index_to_add = i;
+				element_to_return = t1;
+				break;
+//				sortedlist.add(i, t);
+//				return t1;
 			}
 		}
-		
-		sortedlist.add(t);
-		return null;
+		if(insert_from_loop){
+			sortedlist.add(index_to_add,element_to_insert);
+		}
+		else {
+			sortedlist.add(element_to_insert);
+		}
+		return element_to_return;
 	}
 	
 	/*

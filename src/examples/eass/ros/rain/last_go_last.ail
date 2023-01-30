@@ -1,4 +1,4 @@
-mas.file = /src/examples/eass/ros/rain/last_go.gwen
+mas.file = /src/examples/eass/ros/rain/last_go_last.gwen
 mas.builder = eass.EASSMASBuilder
 
 env = eass.ros.rain.AtNearEnv
