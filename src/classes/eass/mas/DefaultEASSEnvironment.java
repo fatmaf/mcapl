@@ -139,13 +139,14 @@ public class DefaultEASSEnvironment extends DefaultEnvironment implements EASSEn
 	 * @param pred
 	 */
 	public void addUniquePercept(String s, Predicate pred) {
+		synchronized (percepts){
 		if (values.containsKey(s.toLowerCase())) {
 			removePercept(values.get(s.toLowerCase()));
 		}
 
 		values.put(s.toLowerCase(), pred);
 		addPercept(pred);
-	}
+	}}
 
 	/**
 	 * Add a percept to this environment that is supposed to be unique - i.e.,
@@ -155,16 +156,18 @@ public class DefaultEASSEnvironment extends DefaultEnvironment implements EASSEn
 	 * @param pred
 	 */
 	public void addUniquePercept(String agName, String s, Predicate pred) {
-		HashMap<String, Predicate> vs = agvalues.get(agName);
-		if (vs != null) {
-			if (vs.containsKey(s.toLowerCase())) {
-				removePercept(agName, vs.get(s.toLowerCase()));
+		synchronized (percepts) {
+			HashMap<String, Predicate> vs = agvalues.get(agName);
+			if (vs != null) {
+				if (vs.containsKey(s.toLowerCase())) {
+					removePercept(agName, vs.get(s.toLowerCase()));
+				}
+
+				vs.put(s.toLowerCase(), pred);
 			}
 
-			vs.put(s.toLowerCase(), pred);
+			addPercept(agName, pred);
 		}
-
-		addPercept(agName, pred);
 	}
 
 	/**
@@ -231,6 +234,7 @@ public class DefaultEASSEnvironment extends DefaultEnvironment implements EASSEn
 	 * @see ail.others.DefaultEnvironment#addPercept(ail.syntax.Literal)
 	 */
 	public void addPercept(Literal per) {
+		synchronized (percepts){
 		if (AJPFLogger.ltFiner(logname)) {
 			AJPFLogger.finer(logname, "adding + " + per.toString());
 		}
@@ -241,13 +245,14 @@ public class DefaultEASSEnvironment extends DefaultEnvironment implements EASSEn
 			}
 		}
 		notifyPerceptListeners();
-	}
+	}}
 
 	/*
 	 * (non-Javadoc)
 	 * @see ail.others.DefaultEnvironment#removePercept(ail.syntax.Literal)
 	 */
 	public boolean removePercept(Literal per) {
+		synchronized (percepts){
 		boolean b = false;
 		if (per != null) {
 			uptodateAgs.clear();
@@ -257,7 +262,7 @@ public class DefaultEASSEnvironment extends DefaultEnvironment implements EASSEn
 		notifyPerceptListeners();
 
 		return b;
-	}
+	}}
 
 
 	/**
